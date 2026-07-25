@@ -1,0 +1,20 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /certificates/{certificateId} {
+      // Authenticated users (Admins) have full access to manage certificates
+      allow read, write: if request.auth != null;
+      
+      // Public users can read certificates for verification
+      allow read: if request.auth == null;
+      
+      // Public users can only update the scan_count (strictly incrementing by 1)
+      allow update: if request.auth == null
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['scan_count'])
+                    && (
+                      (!('scan_count' in resource.data) && request.resource.data.scan_count == 1) ||
+                      (request.resource.data.scan_count == resource.data.scan_count + 1)
+                    );
+    }
+  }
+}
