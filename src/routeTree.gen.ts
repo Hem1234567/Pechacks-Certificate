@@ -15,6 +15,8 @@ import { Route as AdmindashboardRouteImport } from './routes/admindashboard'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as VerifyRouteImport } from './routes/verify'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedBulkPreviewRouteImport } from './routes/_authenticated/bulk-preview'
+import { Route as AuthenticatedTemplatesRouteImport } from './routes/_authenticated/templates'
 import { Route as CertificateIdRouteImport } from './routes/certificate.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -46,6 +48,17 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedBulkPreviewRoute =
+  AuthenticatedBulkPreviewRouteImport.update({
+    id: '/bulk-preview',
+    path: '/bulk-preview',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedTemplatesRoute = AuthenticatedTemplatesRouteImport.update({
+  id: '/templates',
+  path: '/templates',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const CertificateIdRoute = CertificateIdRouteImport.update({
   id: '/certificate/$id',
   path: '/certificate/$id',
@@ -58,6 +71,8 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/verify': typeof VerifyRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/bulk-preview': typeof AuthenticatedBulkPreviewRoute
+  '/templates': typeof AuthenticatedTemplatesRoute
   '/certificate/$id': typeof CertificateIdRoute
 }
 export interface FileRoutesByTo {
@@ -66,6 +81,8 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/verify': typeof VerifyRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/bulk-preview': typeof AuthenticatedBulkPreviewRoute
+  '/templates': typeof AuthenticatedTemplatesRoute
   '/certificate/$id': typeof CertificateIdRoute
 }
 export interface FileRoutesById {
@@ -76,6 +93,8 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/verify': typeof VerifyRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/bulk-preview': typeof AuthenticatedBulkPreviewRoute
+  '/_authenticated/templates': typeof AuthenticatedTemplatesRoute
   '/certificate/$id': typeof CertificateIdRoute
 }
 export interface FileRouteTypes {
@@ -86,6 +105,8 @@ export interface FileRouteTypes {
     | '/auth'
     | '/verify'
     | '/admin'
+    | '/bulk-preview'
+    | '/templates'
     | '/certificate/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -94,6 +115,8 @@ export interface FileRouteTypes {
     | '/auth'
     | '/verify'
     | '/admin'
+    | '/bulk-preview'
+    | '/templates'
     | '/certificate/$id'
   id:
     | '__root__'
@@ -103,6 +126,8 @@ export interface FileRouteTypes {
     | '/auth'
     | '/verify'
     | '/_authenticated/admin'
+    | '/_authenticated/bulk-preview'
+    | '/_authenticated/templates'
     | '/certificate/$id'
   fileRoutesById: FileRoutesById
 }
@@ -159,6 +184,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/bulk-preview': {
+      id: '/_authenticated/bulk-preview'
+      path: '/bulk-preview'
+      fullPath: '/bulk-preview'
+      preLoaderRoute: typeof AuthenticatedBulkPreviewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/templates': {
+      id: '/_authenticated/templates'
+      path: '/templates'
+      fullPath: '/templates'
+      preLoaderRoute: typeof AuthenticatedTemplatesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/certificate/$id': {
       id: '/certificate/$id'
       path: '/certificate/$id'
@@ -171,10 +210,14 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedBulkPreviewRoute: typeof AuthenticatedBulkPreviewRoute
+  AuthenticatedTemplatesRoute: typeof AuthenticatedTemplatesRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedBulkPreviewRoute: AuthenticatedBulkPreviewRoute,
+  AuthenticatedTemplatesRoute: AuthenticatedTemplatesRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

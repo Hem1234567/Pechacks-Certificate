@@ -1,3 +1,6 @@
+/* Google Fonts — Certificate-quality typefaces */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Dancing+Script:wght@400;700&family=Great+Vibes&family=Montserrat:wght@300;400;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Raleway:wght@300;400;600;700&family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Lato:wght@300;400;700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap');
+
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
@@ -143,19 +146,112 @@
 .navy-text { color: #0b1a3a; }
 
 @media print {
-  @page { size: A4 landscape; margin: 0; }
-  html, body { margin: 0 !important; padding: 0 !important; }
-  body * { visibility: hidden; }
-  .certificate-sheet, .certificate-sheet * { visibility: visible; }
-  .certificate-sheet {
-    position: fixed !important;
-    left: 0 !important;
-    top: 0 !important;
+  @page {
+    size: A4 landscape;
+    margin: 0;
+  }
+
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background-color: #ffffff !important;
     width: 297mm !important;
     height: 210mm !important;
-    box-shadow: none !important;
-    margin: 0 !important;
     overflow: hidden !important;
   }
-  .no-print { display: none !important; }
+
+  .no-print { 
+    display: none !important; 
+  }
+
+  /* Reset layout wrappers to prevent them from taking up invisible space */
+  .min-h-screen, .py-8 {
+    min-height: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+  }
+
+  .certificate-sheet {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 297mm !important;
+    height: 210mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    transform: none !important;
+    page-break-after: avoid !important;
+    page-break-before: avoid !important;
+    page-break-inside: avoid !important;
+  }
 }
+
+/* ─── Template Builder Editor ─────────────────────────────────────────────── */
+
+.template-canvas {
+  position: relative;
+  overflow: hidden;
+  background: #f3f3f3;
+  background-image:
+    linear-gradient(45deg, #d0d0d0 25%, transparent 25%),
+    linear-gradient(-45deg, #d0d0d0 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #d0d0d0 75%),
+    linear-gradient(-45deg, transparent 75%, #d0d0d0 75%);
+  background-size: 12px 12px;
+  background-position: 0 0, 0 6px, 6px -6px, -6px 0px;
+}
+
+.field-overlay {
+  position: absolute;
+  border: 1.5px dashed rgba(99, 102, 241, 0.7);
+  background: rgba(99, 102, 241, 0.06);
+  cursor: move;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+  transition: border-color 0.15s, background 0.15s;
+  box-sizing: border-box;
+  min-width: 20px;
+  min-height: 16px;
+}
+
+.field-overlay:hover {
+  border-color: rgba(99, 102, 241, 1);
+  background: rgba(99, 102, 241, 0.1);
+}
+
+.field-overlay.selected {
+  border-color: #6366f1;
+  border-style: solid;
+  background: rgba(99, 102, 241, 0.12);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
+}
+
+.field-overlay-label {
+  font-size: 9px;
+  font-family: ui-monospace, monospace;
+  color: rgba(99, 102, 241, 0.9);
+  user-select: none;
+  pointer-events: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 4px;
+}
+
+/* Resize handle dots */
+.resize-handle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: #6366f1;
+  border: 1.5px solid white;
+  border-radius: 2px;
+  z-index: 10;
+}
+.resize-handle.br { bottom: -4px; right: -4px; cursor: se-resize; }
+.resize-handle.bl { bottom: -4px; left: -4px; cursor: sw-resize; }
+.resize-handle.tr { top: -4px; right: -4px; cursor: ne-resize; }
+.resize-handle.tl { top: -4px; left: -4px; cursor: nw-resize; }

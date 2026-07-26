@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { db, auth, type Cert } from "@/integrations/firebase/client";
+import { db, auth, type Cert, type CertificateTemplate } from "@/integrations/firebase/client";
 import { 
   collection, doc, getDocs, setDoc, updateDoc, deleteDoc, 
   query, where, orderBy, writeBatch, getCountFromServer 
@@ -8,9 +8,9 @@ import {
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import {
-  Award, Search, Plus, LogOut, Download, Upload, Eye, Ban, RotateCcw,
+  Search, Plus, LogOut, Download, Upload, Eye, Ban, RotateCcw,
   Trash2, Copy, X, FileSpreadsheet, Loader2, ShieldCheck, Link as LinkIcon,
-  TableProperties,
+  TableProperties, Layout, Users, CheckCircle2, Layout as LayoutIcon,
 } from "lucide-react";
 import { newCertificateId, verifyUrl } from "@/lib/certificate-utils";
 
@@ -40,6 +40,22 @@ function AdminDashboard() {
   const [stats, setStats] = useState({ total: 0, valid: 0, revoked: 0, today: 0 });
   const [editing, setEditing] = useState<Partial<Cert> | null>(null);
   const [importing, setImporting] = useState(false);
+  const [templates, setTemplates] = useState<CertificateTemplate[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+
+  useEffect(() => { loadTemplates(); }, []);
+
+  async function loadTemplates() {
+    try {
+      const snap = await getDocs(query(collection(db, "certificate_templates"), orderBy("updatedAt", "desc")));
+      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() } as CertificateTemplate));
+      setTemplates(list);
+      // Auto-select first template if only one exists
+      if (list.length === 1) setSelectedTemplateId(list[0].id);
+    } catch (e) {
+      console.error("Failed to load templates", e);
+    }
+  }
 
   useEffect(() => {
     const t = setTimeout(() => load(), 250);
@@ -124,8 +140,10 @@ function AdminDashboard() {
         event_name: form.event_name?.trim() || "PEC Hacks 4.0",
         event_date: form.event_date?.trim() || null,
         status: form.status || "valid",
+        revoke_reason: form.revoke_reason ?? null,
         issued_at: form.issued_at || new Date().toISOString(),
         scan_count: form.scan_count ?? 0,
+        templateId: form.templateId ?? selectedTemplateId ?? null,
       };
       if (!payload.participant_name) return toast.error("Participant name is required");
       
@@ -199,6 +217,7 @@ function AdminDashboard() {
           status: (cleanStr(get("Status")) ?? "valid").toLowerCase() === "revoked" ? "revoked" : "valid",
           issued_at: new Date().toISOString(),
           scan_count: 0,
+          templateId: selectedTemplateId ?? null,
         } as Cert;
       }).filter((r) => r.participant_name);
       if (!rowsIn.length) throw new Error("No valid rows (need Participant/Name column)");
@@ -212,7 +231,10 @@ function AdminDashboard() {
         await batch.commit();
       }
 
-      toast.success(`Imported ${rowsIn.length} certificates`);
+      const tplName = selectedTemplateId
+        ? templates.find((t) => t.id === selectedTemplateId)?.name ?? "selected template"
+        : "default design";
+      toast.success(`Imported ${rowsIn.length} certificates using "${tplName}"`);
       setPage(0);
       load();
     } catch (e) {
@@ -378,6 +400,20 @@ function AdminDashboard() {
             />
           </Link>
           <div className="flex items-center gap-2">
+            <Link
+              to="/templates"
+              className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm hover:bg-accent"
+              title="Certificate Template Builder"
+            >
+              <Layout className="h-4 w-4" /> Templates
+            </Link>
+            <Link
+              to="/bulk-preview"
+              className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm hover:bg-accent"
+              title="Bulk Certificate Preview"
+            >
+              <Users className="h-4 w-4" /> Bulk Preview
+            </Link>
             <button
               onClick={downloadTemplate}
               className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm hover:bg-accent"
@@ -401,6 +437,74 @@ function AdminDashboard() {
           <StatCard label="Valid" value={stats.valid} tone="success" />
           <StatCard label="Revoked" value={stats.revoked} tone="warning" />
           <StatCard label="Issued today" value={stats.today} />
+        </div>
+
+        {/* ── Template Selector Panel ── */}
+        <div className="mt-6 rounded-2xl border border-border bg-card p-5">
+          <div className="mb-3 flex items-center justify-between">
+            <div>
+              <h2 className="flex items-center gap-2 text-sm font-semibold">
+                <LayoutIcon className="h-4 w-4 text-navy" />
+                Select Template for Import
+              </h2>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Choose which template to apply when importing Excel or creating new certificates
+              </p>
+            </div>
+            <Link to="/templates" className="text-xs text-navy hover:underline">
+              + Create / Edit Templates
+            </Link>
+          </div>
+
+          {templates.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border p-4 text-center">
+              <p className="text-sm text-muted-foreground">No templates created yet.</p>
+              <Link to="/templates" className="mt-1 inline-block text-xs text-navy hover:underline">
+                Go to Template Builder →
+              </Link>
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {/* None option */}
+              <button
+                onClick={() => setSelectedTemplateId(null)}
+                className={`flex items-center gap-2 rounded-xl border-2 px-4 py-2.5 text-sm transition-all ${
+                  selectedTemplateId === null
+                    ? "border-muted-foreground/40 bg-muted text-muted-foreground"
+                    : "border-border bg-card hover:bg-muted"
+                }`}
+              >
+                {selectedTemplateId === null && <CheckCircle2 className="h-4 w-4" />}
+                None (default design)
+              </button>
+
+              {templates.map((tpl) => (
+                <button
+                  key={tpl.id}
+                  onClick={() => setSelectedTemplateId(tpl.id)}
+                  className={`flex items-center gap-2 rounded-xl border-2 px-4 py-2.5 text-sm transition-all ${
+                    selectedTemplateId === tpl.id
+                      ? "border-navy bg-navy/5 text-navy font-medium"
+                      : "border-border bg-card hover:bg-muted"
+                  }`}
+                >
+                  {selectedTemplateId === tpl.id && <CheckCircle2 className="h-4 w-4 text-navy" />}
+                  <span>{tpl.name}</span>
+                  {(tpl.applyToRoles.length > 0 || tpl.applyToTypes.length > 0) && (
+                    <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                      {[...tpl.applyToRoles, ...tpl.applyToTypes].join(", ")}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {selectedTemplateId && (
+            <p className="mt-3 text-xs text-green-700">
+              ✓ <strong>"{templates.find(t => t.id === selectedTemplateId)?.name}"</strong> will be applied to all certificates imported from Excel or created via + New
+            </p>
+          )}
         </div>
 
         <div className="mt-8 flex flex-wrap items-center gap-2">
@@ -430,9 +534,18 @@ function AdminDashboard() {
             <option value="">All roles</option>
             {ROLES.map((r) => <option key={r}>{r}</option>)}
           </select>
-          <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-card px-3 py-2.5 text-sm hover:bg-accent">
+          <label className={`inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2.5 text-sm ${
+            selectedTemplateId
+              ? "border-navy bg-navy/5 text-navy hover:bg-navy/10"
+              : "border-border bg-card hover:bg-accent"
+          }`}>
             {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
             Import Excel
+            {selectedTemplateId && (
+              <span className="rounded-full bg-navy px-1.5 py-0.5 text-[10px] text-white">
+                {templates.find(t => t.id === selectedTemplateId)?.name}
+              </span>
+            )}
             <input
               type="file"
               accept=".xlsx,.xls,.csv"

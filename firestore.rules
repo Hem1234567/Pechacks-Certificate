@@ -16,5 +16,15 @@ service cloud.firestore {
                       (request.resource.data.scan_count == resource.data.scan_count + 1)
                     );
     }
+
+    // ── Certificate Templates (new) ──────────────────────────────────────────
+    match /certificate_templates/{templateId} {
+      // Admins can create, update, delete and read templates
+      allow read, write, delete: if request.auth != null;
+
+      // Public users can READ templates so the certificate page can render
+      // the correct layout (name, QR style, field positions) without logging in
+      allow read: if request.auth == null;
+    }
   }
 }
