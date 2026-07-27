@@ -15,9 +15,11 @@ import { Route as AdmindashboardRouteImport } from './routes/admindashboard'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as VerifyRouteImport } from './routes/verify'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
-import { Route as AuthenticatedBulkPreviewRouteImport } from './routes/_authenticated/bulk-preview'
-import { Route as AuthenticatedTemplatesRouteImport } from './routes/_authenticated/templates'
 import { Route as CertificateIdRouteImport } from './routes/certificate.$id'
+import { Route as AuthenticatedProjectProjectIdRouteImport } from './routes/_authenticated/project.$projectId'
+import { Route as AuthenticatedProjectProjectIdIndexRouteImport } from './routes/_authenticated/project.$projectId.index'
+import { Route as AuthenticatedProjectProjectIdBulkPreviewRouteImport } from './routes/_authenticated/project.$projectId.bulk-preview'
+import { Route as AuthenticatedProjectProjectIdTemplatesRouteImport } from './routes/_authenticated/project.$projectId.templates'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -48,22 +50,35 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedBulkPreviewRoute =
-  AuthenticatedBulkPreviewRouteImport.update({
-    id: '/bulk-preview',
-    path: '/bulk-preview',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedTemplatesRoute = AuthenticatedTemplatesRouteImport.update({
-  id: '/templates',
-  path: '/templates',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const CertificateIdRoute = CertificateIdRouteImport.update({
   id: '/certificate/$id',
   path: '/certificate/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedProjectProjectIdRoute =
+  AuthenticatedProjectProjectIdRouteImport.update({
+    id: '/project/$projectId',
+    path: '/project/$projectId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedProjectProjectIdIndexRoute =
+  AuthenticatedProjectProjectIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedProjectProjectIdRoute,
+  } as any)
+const AuthenticatedProjectProjectIdBulkPreviewRoute =
+  AuthenticatedProjectProjectIdBulkPreviewRouteImport.update({
+    id: '/bulk-preview',
+    path: '/bulk-preview',
+    getParentRoute: () => AuthenticatedProjectProjectIdRoute,
+  } as any)
+const AuthenticatedProjectProjectIdTemplatesRoute =
+  AuthenticatedProjectProjectIdTemplatesRouteImport.update({
+    id: '/templates',
+    path: '/templates',
+    getParentRoute: () => AuthenticatedProjectProjectIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -71,9 +86,11 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/verify': typeof VerifyRoute
   '/admin': typeof AuthenticatedAdminRoute
-  '/bulk-preview': typeof AuthenticatedBulkPreviewRoute
-  '/templates': typeof AuthenticatedTemplatesRoute
   '/certificate/$id': typeof CertificateIdRoute
+  '/project/$projectId': typeof AuthenticatedProjectProjectIdRouteWithChildren
+  '/project/$projectId/bulk-preview': typeof AuthenticatedProjectProjectIdBulkPreviewRoute
+  '/project/$projectId/templates': typeof AuthenticatedProjectProjectIdTemplatesRoute
+  '/project/$projectId/': typeof AuthenticatedProjectProjectIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -81,9 +98,10 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/verify': typeof VerifyRoute
   '/admin': typeof AuthenticatedAdminRoute
-  '/bulk-preview': typeof AuthenticatedBulkPreviewRoute
-  '/templates': typeof AuthenticatedTemplatesRoute
   '/certificate/$id': typeof CertificateIdRoute
+  '/project/$projectId/bulk-preview': typeof AuthenticatedProjectProjectIdBulkPreviewRoute
+  '/project/$projectId/templates': typeof AuthenticatedProjectProjectIdTemplatesRoute
+  '/project/$projectId': typeof AuthenticatedProjectProjectIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -93,9 +111,11 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/verify': typeof VerifyRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
-  '/_authenticated/bulk-preview': typeof AuthenticatedBulkPreviewRoute
-  '/_authenticated/templates': typeof AuthenticatedTemplatesRoute
   '/certificate/$id': typeof CertificateIdRoute
+  '/_authenticated/project/$projectId': typeof AuthenticatedProjectProjectIdRouteWithChildren
+  '/_authenticated/project/$projectId/bulk-preview': typeof AuthenticatedProjectProjectIdBulkPreviewRoute
+  '/_authenticated/project/$projectId/templates': typeof AuthenticatedProjectProjectIdTemplatesRoute
+  '/_authenticated/project/$projectId/': typeof AuthenticatedProjectProjectIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -105,9 +125,11 @@ export interface FileRouteTypes {
     | '/auth'
     | '/verify'
     | '/admin'
-    | '/bulk-preview'
-    | '/templates'
     | '/certificate/$id'
+    | '/project/$projectId'
+    | '/project/$projectId/bulk-preview'
+    | '/project/$projectId/templates'
+    | '/project/$projectId/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -115,9 +137,10 @@ export interface FileRouteTypes {
     | '/auth'
     | '/verify'
     | '/admin'
-    | '/bulk-preview'
-    | '/templates'
     | '/certificate/$id'
+    | '/project/$projectId/bulk-preview'
+    | '/project/$projectId/templates'
+    | '/project/$projectId'
   id:
     | '__root__'
     | '/'
@@ -126,9 +149,11 @@ export interface FileRouteTypes {
     | '/auth'
     | '/verify'
     | '/_authenticated/admin'
-    | '/_authenticated/bulk-preview'
-    | '/_authenticated/templates'
     | '/certificate/$id'
+    | '/_authenticated/project/$projectId'
+    | '/_authenticated/project/$projectId/bulk-preview'
+    | '/_authenticated/project/$projectId/templates'
+    | '/_authenticated/project/$projectId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -184,20 +209,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/bulk-preview': {
-      id: '/_authenticated/bulk-preview'
-      path: '/bulk-preview'
-      fullPath: '/bulk-preview'
-      preLoaderRoute: typeof AuthenticatedBulkPreviewRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/templates': {
-      id: '/_authenticated/templates'
-      path: '/templates'
-      fullPath: '/templates'
-      preLoaderRoute: typeof AuthenticatedTemplatesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/certificate/$id': {
       id: '/certificate/$id'
       path: '/certificate/$id'
@@ -205,19 +216,67 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CertificateIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/project/$projectId': {
+      id: '/_authenticated/project/$projectId'
+      path: '/project/$projectId'
+      fullPath: '/project/$projectId'
+      preLoaderRoute: typeof AuthenticatedProjectProjectIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/project/$projectId/': {
+      id: '/_authenticated/project/$projectId/'
+      path: '/'
+      fullPath: '/project/$projectId/'
+      preLoaderRoute: typeof AuthenticatedProjectProjectIdIndexRouteImport
+      parentRoute: typeof AuthenticatedProjectProjectIdRoute
+    }
+    '/_authenticated/project/$projectId/bulk-preview': {
+      id: '/_authenticated/project/$projectId/bulk-preview'
+      path: '/bulk-preview'
+      fullPath: '/project/$projectId/bulk-preview'
+      preLoaderRoute: typeof AuthenticatedProjectProjectIdBulkPreviewRouteImport
+      parentRoute: typeof AuthenticatedProjectProjectIdRoute
+    }
+    '/_authenticated/project/$projectId/templates': {
+      id: '/_authenticated/project/$projectId/templates'
+      path: '/templates'
+      fullPath: '/project/$projectId/templates'
+      preLoaderRoute: typeof AuthenticatedProjectProjectIdTemplatesRouteImport
+      parentRoute: typeof AuthenticatedProjectProjectIdRoute
+    }
   }
 }
 
+interface AuthenticatedProjectProjectIdRouteChildren {
+  AuthenticatedProjectProjectIdBulkPreviewRoute: typeof AuthenticatedProjectProjectIdBulkPreviewRoute
+  AuthenticatedProjectProjectIdTemplatesRoute: typeof AuthenticatedProjectProjectIdTemplatesRoute
+  AuthenticatedProjectProjectIdIndexRoute: typeof AuthenticatedProjectProjectIdIndexRoute
+}
+
+const AuthenticatedProjectProjectIdRouteChildren: AuthenticatedProjectProjectIdRouteChildren =
+  {
+    AuthenticatedProjectProjectIdBulkPreviewRoute:
+      AuthenticatedProjectProjectIdBulkPreviewRoute,
+    AuthenticatedProjectProjectIdTemplatesRoute:
+      AuthenticatedProjectProjectIdTemplatesRoute,
+    AuthenticatedProjectProjectIdIndexRoute:
+      AuthenticatedProjectProjectIdIndexRoute,
+  }
+
+const AuthenticatedProjectProjectIdRouteWithChildren =
+  AuthenticatedProjectProjectIdRoute._addFileChildren(
+    AuthenticatedProjectProjectIdRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
-  AuthenticatedBulkPreviewRoute: typeof AuthenticatedBulkPreviewRoute
-  AuthenticatedTemplatesRoute: typeof AuthenticatedTemplatesRoute
+  AuthenticatedProjectProjectIdRoute: typeof AuthenticatedProjectProjectIdRouteWithChildren
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
-  AuthenticatedBulkPreviewRoute: AuthenticatedBulkPreviewRoute,
-  AuthenticatedTemplatesRoute: AuthenticatedTemplatesRoute,
+  AuthenticatedProjectProjectIdRoute:
+    AuthenticatedProjectProjectIdRouteWithChildren,
 }
 
 const AuthenticatedRouteRouteWithChildren =

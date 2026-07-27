@@ -25,12 +25,12 @@ import {
   Search,
   Users,
 } from "lucide-react";
-import { styledQrDataUrl, verifyUrl, downloadCertificatePdf, DEFAULT_QR_CONFIG } from "@/lib/certificate-utils";
+import { verifyUrl } from "@/lib/certificate-utils";
 
-export const Route = createFileRoute("/_authenticated/bulk-preview")({
+export const Route = createFileRoute("/_authenticated/project/$projectId/bulk-preview")({
   head: () => ({
     meta: [
-      { title: "Bulk Certificate Preview — Admin" },
+      { title: "Bulk Preview — PEC Hacks 4.0" },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -45,6 +45,7 @@ type CertRow = Cert & { verifyLink: string };
 
 function BulkPreviewPage() {
   const navigate = useNavigate();
+  const { projectId } = Route.useParams();
   const [templates, setTemplates] = useState<CertificateTemplate[]>([]);
   const [selectedTplId, setSelectedTplId] = useState<string>("__all__");
   const [certs, setCerts] = useState<CertRow[]>([]);
@@ -52,12 +53,10 @@ function BulkPreviewPage() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
-  const [generatingAll, setGeneratingAll] = useState(false);
-  const [generatingId, setGeneratingId] = useState<string | null>(null);
 
   useEffect(() => {
-    loadAll();
-  }, []);
+    loadData();
+  }, [projectId]);
 
   useEffect(() => {
     const s = search.trim().toLowerCase();
@@ -74,12 +73,12 @@ function BulkPreviewPage() {
     );
   }, [search, certs]);
 
-  async function loadAll() {
+  async function loadData() {
     setLoading(true);
     try {
-      const [tplSnap, certSnap] = await Promise.all([
-        getDocs(query(collection(db, "certificate_templates"), orderBy("updatedAt", "desc"))),
-        getDocs(query(collection(db, "certificates"), orderBy("issued_at", "desc"))),
+      const [certSnap, tplSnap] = await Promise.all([
+        getDocs(query(collection(db, "certificates"), where("projectId", "==", projectId === "default" ? null : projectId), orderBy("issued_at", "desc"))),
+        getDocs(query(collection(db, "certificate_templates"), where("projectId", "==", projectId === "default" ? null : projectId), orderBy("updatedAt", "desc")))
       ]);
 
       const tplList = tplSnap.docs.map((d) => ({ id: d.id, ...d.data() } as CertificateTemplate));
@@ -150,18 +149,11 @@ function BulkPreviewPage() {
   }
 
   return (
-    <div className="min-h-screen bg-muted/30">
-      {/* Header */}
-      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-background/95 backdrop-blur px-6 h-14">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate({ to: "/admin" })}
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" /> Admin
-          </button>
-          <span className="text-muted-foreground/40">/</span>
-          <span className="text-sm font-medium">Bulk Certificate Preview</span>
+    <div className="mx-auto max-w-7xl w-full flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-serif text-3xl font-semibold text-navy">Bulk Preview</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Preview how all certificates will render with their assigned templates.</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -179,133 +171,128 @@ function BulkPreviewPage() {
             Open All ({displayCerts.length})
           </button>
         </div>
-      </header>
+      </div>
 
-      <div className="mx-auto max-w-7xl px-6 py-8">
-        {/* Stats bar */}
-        <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <StatPill label="Total certificates" value={certs.length} />
-          <StatPill label="Templates" value={templates.length} />
-          <StatPill label="Showing" value={displayCerts.length} />
-          <StatPill
-            label="No template"
-            value={certs.filter((c) => !matchTemplate(c)).length}
-            warn
+      {/* Stats bar */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <StatPill label="Total certificates" value={certs.length} />
+        <StatPill label="Templates" value={templates.length} />
+        <StatPill label="Showing" value={displayCerts.length} />
+        <StatPill
+          label="No template"
+          value={certs.filter((c) => !matchTemplate(c)).length}
+          warn
+        />
+      </div>
+
+      {/* Workflow hint */}
+      <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4">
+        <h2 className="text-sm font-semibold text-indigo-800 mb-1 flex items-center gap-2">
+          <FileText className="h-4 w-4" /> How the Bulk Workflow Works
+        </h2>
+        <ol className="text-xs text-indigo-700 space-y-1 list-decimal list-inside">
+          <li>
+            Go to{" "}
+            <Link to="/project/$projectId/templates" params={{ projectId }} className="underline font-medium">
+              Template Builder
+            </Link>{" "}
+            → design your certificate → <strong>Save</strong>
+          </li>
+          <li>
+            Go to{" "}
+            <Link to="/project/$projectId" params={{ projectId }} className="underline font-medium">
+              Certificate Manager
+            </Link>{" "}
+            → click <strong>Import</strong> → upload your spreadsheet
+          </li>
+          <li>
+            Every certificate auto-uses your template — each person's details are unique to them
+          </li>
+          <li>
+            Share verify links below, or click <strong>Open All</strong> to open each certificate
+            (then use Print → Save as PDF for individual downloads)
+          </li>
+        </ol>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            placeholder="Search name, ID, team, role…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full rounded-lg border border-input bg-card pl-9 pr-3 py-2.5 text-sm outline-none focus:border-ring"
           />
         </div>
 
-        {/* Workflow hint */}
-        <div className="mb-6 rounded-xl border border-indigo-200 bg-indigo-50 p-4">
-          <h2 className="text-sm font-semibold text-indigo-800 mb-1 flex items-center gap-2">
-            <FileText className="h-4 w-4" /> How the Bulk Workflow Works
-          </h2>
-          <ol className="text-xs text-indigo-700 space-y-1 list-decimal list-inside">
-            <li>
-              Go to{" "}
-              <Link to="/templates" className="underline font-medium">
-                Template Builder
-              </Link>{" "}
-              → design your certificate (background, field positions, font, QR style) → <strong>Save</strong>
-            </li>
-            <li>
-              Go to{" "}
-              <Link to="/admin" className="underline font-medium">
-                Admin Dashboard
-              </Link>{" "}
-              → click <strong>Import Excel</strong> → upload your participants spreadsheet
-            </li>
-            <li>
-              Every certificate now auto-uses your template — each person's name, QR code, and verify
-              link are unique to them
-            </li>
-            <li>
-              Share verify links below, or click <strong>Open All</strong> to open each certificate
-              (then use Print → Save as PDF for individual downloads)
-            </li>
-          </ol>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground whitespace-nowrap">Template:</span>
+          <select
+            value={selectedTplId}
+            onChange={(e) => setSelectedTplId(e.target.value)}
+            className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm"
+          >
+            <option value="__all__">All certificates</option>
+            {templates.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+            <option value="__none__">No matching template</option>
+          </select>
         </div>
+      </div>
 
-        {/* Filters */}
-        <div className="mb-4 flex flex-wrap items-center gap-3">
-          {/* Search */}
-          <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              placeholder="Search name, ID, team, role…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-lg border border-input bg-card pl-9 pr-3 py-2.5 text-sm outline-none focus:border-ring"
-            />
-          </div>
-
-          {/* Template filter */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground whitespace-nowrap">Template:</span>
-            <select
-              value={selectedTplId}
-              onChange={(e) => setSelectedTplId(e.target.value)}
-              className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm"
-            >
-              <option value="__all__">All certificates</option>
-              {templates.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-              <option value="__none__">No matching template</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Certificate table */}
-        <div className="overflow-hidden rounded-2xl border border-border bg-card">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="border-b border-border bg-muted/50 text-left text-xs uppercase tracking-wider text-muted-foreground">
+      {/* Certificate table */}
+      <div className="overflow-hidden rounded-2xl border border-border bg-card">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="border-b border-border bg-muted/50 text-left text-xs uppercase tracking-wider text-muted-foreground">
+              <tr>
+                <th className="px-4 py-3">#</th>
+                <th className="px-4 py-3">Participant</th>
+                <th className="px-4 py-3">Role / Type</th>
+                <th className="px-4 py-3">Template Applied</th>
+                <th className="px-4 py-3">Certificate ID</th>
+                <th className="px-4 py-3">Verify Link</th>
+                <th className="px-4 py-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {displayCerts.length === 0 ? (
                 <tr>
-                  <th className="px-4 py-3">#</th>
-                  <th className="px-4 py-3">Participant</th>
-                  <th className="px-4 py-3">Role / Type</th>
-                  <th className="px-4 py-3">Template Applied</th>
-                  <th className="px-4 py-3">Certificate ID</th>
-                  <th className="px-4 py-3">Verify Link</th>
-                  <th className="px-4 py-3 text-right">Actions</th>
+                  <td colSpan={7} className="p-10 text-center text-muted-foreground">
+                    {search ? "No certificates match your search." : "No certificates found."}
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {displayCerts.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="p-10 text-center text-muted-foreground">
-                      {search ? "No certificates match your search." : "No certificates found."}
-                    </td>
-                  </tr>
-                ) : (
-                  displayCerts.map((cert, idx) => {
-                    const tpl = matchTemplate(cert);
-                    return (
-                      <CertRow
-                        key={cert.id}
-                        idx={idx + 1}
-                        cert={cert}
-                        template={tpl}
-                        onOpen={() => openCert(cert)}
-                      />
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-          <div className="flex items-center justify-between border-t border-border px-4 py-3 text-xs text-muted-foreground">
-            <span>Showing {displayCerts.length} of {certs.length} total certificates</span>
-            <button
-              onClick={copyAllLinks}
-              className="inline-flex items-center gap-1.5 hover:text-foreground"
-            >
-              <Copy className="h-3.5 w-3.5" />
-              Copy all verify links
-            </button>
-          </div>
+              ) : (
+                displayCerts.map((cert, idx) => {
+                  const tpl = matchTemplate(cert);
+                  return (
+                    <CertRow
+                      key={cert.id}
+                      idx={idx + 1}
+                      cert={cert}
+                      template={tpl}
+                      onOpen={() => openCert(cert)}
+                    />
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+        <div className="flex items-center justify-between border-t border-border px-4 py-3 text-xs text-muted-foreground">
+          <span>Showing {displayCerts.length} of {certs.length} total certificates</span>
+          <button
+            onClick={copyAllLinks}
+            className="inline-flex items-center gap-1.5 hover:text-foreground"
+          >
+            <Copy className="h-3.5 w-3.5" />
+            Copy all verify links
+          </button>
         </div>
       </div>
     </div>

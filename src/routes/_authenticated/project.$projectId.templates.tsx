@@ -14,10 +14,12 @@ import {
   orderBy,
   query,
   setDoc,
+  where,
 } from "firebase/firestore";
 import { toast } from "sonner";
 import {
   ArrowLeft,
+  CheckCircle2,
   Eye,
   EyeOff,
   GripVertical,
@@ -34,14 +36,14 @@ import {
 import { DEFAULT_QR_CONFIG, styledQrDataUrl, verifyUrl } from "@/lib/certificate-utils";
 import { QRStylePicker, FONT_OPTIONS } from "@/components/qr-style-picker";
 
-export const Route = createFileRoute("/_authenticated/templates")({
+export const Route = createFileRoute("/_authenticated/project/$projectId/templates")({
   head: () => ({
     meta: [
-      { title: "Template Builder — Admin" },
+      { title: "Template Builder — PEC Hacks 4.0" },
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: TemplateBuilderPage,
+  component: TemplatesPage,
 });
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -118,8 +120,8 @@ function emptyTemplate(): CertificateTemplate {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
-function TemplateBuilderPage() {
-  const navigate = useNavigate();
+function TemplatesPage() {
+  const { projectId } = Route.useParams();
   const [templates, setTemplates] = useState<CertificateTemplate[]>([]);
   const [active, setActive] = useState<CertificateTemplate | null>(null);
   const [loading, setLoading] = useState(true);
@@ -129,18 +131,21 @@ function TemplateBuilderPage() {
 
   useEffect(() => {
     loadTemplates();
-  }, []);
+  }, [projectId]);
 
   async function loadTemplates() {
     setLoading(true);
     try {
-      const snap = await getDocs(
-        query(collection(db, "certificate_templates"), orderBy("updatedAt", "desc"))
+      const q = query(
+        collection(db, "certificate_templates"), 
+        where("projectId", "==", projectId === "default" ? null : projectId),
+        orderBy("updatedAt", "desc")
       );
+      const snap = await getDocs(q);
       const list = snap.docs.map((d) => ({ id: d.id, ...d.data() } as CertificateTemplate));
       setTemplates(list);
       if (list.length > 0 && !active) setActive(list[0]);
-      else if (list.length === 0) setActive(emptyTemplate());
+      else if (list.length === 0) setActive({ ...emptyTemplate(), projectId: projectId === "default" ? "" : projectId });
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -152,7 +157,17 @@ function TemplateBuilderPage() {
     if (!active) return;
     setSaving(true);
     try {
-      const payload = { ...active, updatedAt: new Date().toISOString() };
+      const payload: Omit<CertificateTemplate, "id"> = {
+        name: active.name || "Untitled Template",
+        backgroundUrl: active.backgroundUrl || "",
+        fields: active.fields || [],
+        qrConfig: active.qrConfig || DEFAULT_QR_CONFIG,
+        applyToRoles: active.applyToRoles || [],
+        applyToTypes: active.applyToTypes || [],
+        updatedAt: new Date().toISOString(),
+        createdAt: active.createdAt || new Date().toISOString(),
+        projectId: projectId === "default" ? "" : projectId,
+      };
       await setDoc(doc(db, "certificate_templates", active.id), payload);
       toast.success("Template saved!");
       await loadTemplates();
@@ -265,38 +280,31 @@ function TemplateBuilderPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-muted/30">
-      {/* Header */}
-      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-background/95 backdrop-blur px-6 h-14">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate({ to: "/admin" })}
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" /> Admin
-          </button>
-          <span className="text-muted-foreground/40">/</span>
-          <span className="text-sm font-medium">Template Builder</span>
+    <div className="flex flex-col flex-1 h-[calc(100vh-4rem)]">
+      <div className="flex items-center justify-between p-4 sm:p-6 lg:px-8">
+        <div>
+          <h1 className="font-serif text-3xl font-semibold text-navy">Certificate Templates</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Design your certificate layouts.</p>
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => { setActive(emptyTemplate()); setSelectedFieldId(null); }}
+            onClick={() => { setActive({ ...emptyTemplate(), projectId: projectId === "default" ? "" : projectId }); setSelectedFieldId(null); }}
             className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5 text-sm hover:bg-accent"
           >
             <Plus className="h-3.5 w-3.5" /> New Template
           </button>
           <button
             onClick={saveTemplate}
-            disabled={saving || !active}
-            className="inline-flex items-center gap-2 rounded-lg bg-navy px-4 py-1.5 text-sm text-navy-foreground hover:opacity-90 disabled:opacity-60"
+            disabled={saving}
+            className="inline-flex items-center gap-2 rounded-lg bg-navy px-4 py-1.5 text-sm font-medium text-navy-foreground hover:opacity-90 disabled:opacity-50"
           >
-            {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+            {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
             Save
           </button>
         </div>
-      </header>
+      </div>
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden border-t border-border">
         {/* ── Left sidebar: template list ── */}
         <aside className="w-56 shrink-0 border-r border-border bg-background overflow-y-auto">
           <div className="p-3">
@@ -417,7 +425,7 @@ function TemplateBuilderPage() {
 
               {/* Canvas tab */}
               {tab === "canvas" && (
-                <div className="flex flex-1 flex-col overflow-auto p-6 gap-4">
+                <div className="flex flex-1 flex-col overflow-auto p-4 gap-4 bg-muted/10">
                   <CanvasEditor
                     template={active}
                     selectedFieldId={selectedFieldId}

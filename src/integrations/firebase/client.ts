@@ -32,6 +32,7 @@ export type Cert = {
   issued_at: string;
   scan_count: number;
   templateId?: string | null;   // explicit template link (overrides role/type auto-match)
+  projectId?: string | null;      // explicit project link
 };
 
 // ─── Template Builder Types ───────────────────────────────────────────────────
@@ -70,8 +71,15 @@ export type QRStyleConfig = {
   size: number;            // px
 };
 
+export type Project = {
+  id: string;
+  name: string;
+  createdAt: string;
+};
+
 export type CertificateTemplate = {
   id: string;
+  projectId?: string;      // scopes template to a project
   name: string;
   backgroundUrl: string;   // base64 data URL or Cloudinary URL
   fields: FieldConfig[];
