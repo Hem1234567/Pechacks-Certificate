@@ -58,19 +58,20 @@ function VerifyPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border/60">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-6 h-12">
-          <Link to="/" className="flex items-center">
+      <header className="border-b border-border/60 bg-background/70 backdrop-blur sticky top-0 z-40">
+        <div className="mx-auto flex max-w-4xl items-center justify-between px-4 sm:px-6 h-14 sm:h-16">
+          <Link to="/" className="flex items-center gap-2 shrink-0">
             <img
-              src="https://res.cloudinary.com/dzf0ggbrg/image/upload/v1784998453/uploads/media-converter/nkjufde8hggarqze8ejd.png"
-              alt="Panimalar Engineering College"
-              className="h-10 w-10 object-contain scale-[2.5] origin-left relative z-50"
+              src="https://res.cloudinary.com/dzf0ggbrg/image/upload/v1785113095/uploads/media-converter/rpgoiz586azlmezzgfwu.png"
+              alt="PEC Hacks 4.0"
+              className="h-8 w-auto sm:h-10 object-contain"
             />
           </Link>
+          <Link to="/" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors">← Back</Link>
         </div>
       </header>
 
-      <div className="mx-auto max-w-2xl px-6 py-12">
+      <div className="mx-auto max-w-2xl px-4 sm:px-6 py-8 sm:py-12">
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -81,7 +82,7 @@ function VerifyPage() {
             // Simplest: navigate
             window.location.href = `/verify?id=${encodeURIComponent(clean)}`;
           }}
-          className="mb-8 flex gap-2"
+          className="mb-6 sm:mb-8 flex flex-col sm:flex-row gap-2"
         >
           <input
             value={input}
@@ -193,7 +194,7 @@ function Details({ cert, muted = false }: { cert: Cert; muted?: boolean }) {
     ["Issued", new Date(cert.issued_at).toLocaleDateString()],
   ];
   return (
-    <dl className={`mt-8 grid gap-x-6 gap-y-3 sm:grid-cols-2 ${muted ? "opacity-70" : ""}`}>
+    <dl className={`mt-6 sm:mt-8 grid gap-x-6 gap-y-3 grid-cols-1 sm:grid-cols-2 ${muted ? "opacity-70" : ""}`}>
       {rows.filter(([, v]) => v).map(([k, v]) => (
         <div key={k} className="border-b border-border/60 pb-2">
           <dt className="text-[11px] uppercase tracking-widest text-muted-foreground">{k}</dt>

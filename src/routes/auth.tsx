@@ -56,9 +56,9 @@ function AuthPage() {
       <div className="w-full max-w-md">
         <Link to="/" className="mb-8 flex items-center justify-center">
           <img
-            src="https://res.cloudinary.com/dzf0ggbrg/image/upload/v1784998453/uploads/media-converter/nkjufde8hggarqze8ejd.png"
-            alt="Panimalar Engineering College"
-            className="h-32 w-32 object-contain"
+            src="https://res.cloudinary.com/dzf0ggbrg/image/upload/v1785113095/uploads/media-converter/rpgoiz586azlmezzgfwu.png"
+            alt="PEC Hacks 4.0"
+            className="h-24 w-auto object-contain"
           />
         </Link>
 

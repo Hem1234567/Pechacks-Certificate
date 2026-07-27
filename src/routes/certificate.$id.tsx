@@ -116,7 +116,7 @@ function CertificatePage() {
 
   return (
     <div className="min-h-screen bg-muted/30 py-8">
-      <div className="no-print mx-auto mb-6 flex max-w-[297mm] items-center justify-between px-4">
+      <div className="no-print mx-auto mb-6 flex max-w-[297mm] flex-wrap items-center justify-between gap-3 px-4">
         <button
           onClick={() => window.history.back()}
           className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
@@ -126,9 +126,9 @@ function CertificatePage() {
         <div className="flex gap-2">
           <button
             onClick={() => window.print()}
-            className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm hover:bg-accent"
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 sm:px-4 py-2 text-sm hover:bg-accent"
           >
-            <Printer className="h-4 w-4" /> Print
+            <Printer className="h-4 w-4" /> <span className="hidden sm:inline">Print</span>
           </button>
           <button
             onClick={() =>
@@ -139,7 +139,7 @@ function CertificatePage() {
               )
             }
             disabled={!!pdfStatus}
-            className="inline-flex items-center gap-2 rounded-lg bg-navy px-4 py-2 text-sm text-navy-foreground hover:opacity-90 disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-lg bg-navy px-3 sm:px-4 py-2 text-sm text-navy-foreground hover:opacity-90 disabled:opacity-60"
           >
             {pdfStatus ? (
               <>
@@ -147,7 +147,7 @@ function CertificatePage() {
               </>
             ) : (
               <>
-                <Download className="h-4 w-4" /> Download PDF
+                <Download className="h-4 w-4" /> <span className="hidden sm:inline">Download PDF</span>
               </>
             )}
           </button>

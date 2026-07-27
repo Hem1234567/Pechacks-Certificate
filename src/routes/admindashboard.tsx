@@ -44,14 +44,14 @@ function AdminLoginPage() {
   }
 
   return (
-    <div className="grid min-h-screen place-items-center bg-background px-4">
+    <div className="grid min-h-screen place-items-center bg-background px-4 py-8">
       <div className="w-full max-w-md">
         {/* Logo */}
         <Link to="/" className="mb-8 flex flex-col items-center gap-3">
           <img
-            src="https://res.cloudinary.com/dzf0ggbrg/image/upload/v1784998453/uploads/media-converter/nkjufde8hggarqze8ejd.png"
-            alt="Panimalar Engineering College"
-            className="h-24 w-24 object-contain"
+            src="https://res.cloudinary.com/dzf0ggbrg/image/upload/v1785113095/uploads/media-converter/rpgoiz586azlmezzgfwu.png"
+            alt="PEC Hacks 4.0"
+            className="h-20 w-auto sm:h-24 object-contain"
           />
           <p className="text-xs uppercase tracking-widest text-muted-foreground">
             Panimalar Engineering College

@@ -59,33 +59,36 @@ function ProjectsDashboard() {
   return (
     <div className="min-h-screen bg-muted/20">
       <header className="sticky top-0 z-40 border-b border-border bg-card shadow-sm">
-        <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-4">
-            <div>
-              <h1 className="font-serif text-xl font-semibold text-navy">Admin Dashboard</h1>
-            </div>
+        <div className="mx-auto flex h-14 sm:h-16 max-w-5xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-3">
+            <img
+              src="https://res.cloudinary.com/dzf0ggbrg/image/upload/v1785113095/uploads/media-converter/rpgoiz586azlmezzgfwu.png"
+              alt="PEC Hacks 4.0"
+              className="h-7 w-auto sm:h-8 object-contain"
+            />
+            <h1 className="font-serif text-lg sm:text-xl font-semibold text-navy">Admin Dashboard</h1>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
             <button
               onClick={signOut}
-              className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10"
+              className="inline-flex items-center gap-2 rounded-lg px-2.5 sm:px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10"
             >
               <LogOut className="h-4 w-4" />
-              Sign out
+              <span className="hidden sm:inline">Sign out</span>
             </button>
           </div>
         </div>
       </header>
       
       <main className="mx-auto max-w-5xl p-4 sm:p-6 lg:p-8">
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 className="font-serif text-3xl text-navy">Projects</h2>
+            <h2 className="font-serif text-2xl sm:text-3xl text-navy">Projects</h2>
             <p className="mt-1 text-sm text-muted-foreground">Manage your event workspaces</p>
           </div>
           <button 
             onClick={() => { setNewProjectName(""); setShowModal(true); }}
-            className="inline-flex items-center gap-2 rounded-lg bg-navy px-4 py-2.5 text-sm font-medium text-navy-foreground hover:opacity-90 transition-opacity"
+            className="inline-flex items-center gap-2 rounded-lg bg-navy px-4 py-2.5 text-sm font-medium text-navy-foreground hover:opacity-90 transition-opacity self-start sm:self-auto"
           >
             <Plus className="h-4 w-4" /> Create project
           </button>
