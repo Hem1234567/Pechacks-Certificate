@@ -1,35 +1,65 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // ── Helper: is the request from a signed-in admin? ──────────────────────
+    function isAdmin() {
+      return request.auth != null;
+    }
+
+    // ── Certificates ─────────────────────────────────────────────────────────
+    // Admins have full CRUD. Public can read (for verification page).
+    // Public can ONLY update scan_count by exactly +1 (no other fields).
     match /certificates/{certificateId} {
-      // Authenticated users (Admins) have full access to manage certificates
-      allow read, write: if request.auth != null;
-      
-      // Public users can read certificates for verification
-      allow read: if request.auth == null;
-      
-      // Public users can only update the scan_count (strictly incrementing by 1)
-      allow update: if request.auth == null
-                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['scan_count'])
-                    && (
-                      (!('scan_count' in resource.data) && request.resource.data.scan_count == 1) ||
-                      (request.resource.data.scan_count == resource.data.scan_count + 1)
+      allow read:   if true;
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin()
+                    || (
+                      request.auth == null
+                      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['scan_count'])
+                      && (
+                        (!('scan_count' in resource.data) && request.resource.data.scan_count == 1)
+                        || (request.resource.data.scan_count == resource.data.scan_count + 1)
+                      )
                     );
     }
 
-    // ── Certificate Templates (new) ──────────────────────────────────────────
+    // ── Certificate Templates ─────────────────────────────────────────────────
+    // Admins: full CRUD.
+    // Public: read-only (so the public certificate page can render templates).
     match /certificate_templates/{templateId} {
-      // Admins can create, update, delete and read templates
-      allow read, write, delete: if request.auth != null;
-
-      // Public users can READ templates so the certificate page can render
-      // them perfectly matching what the admin built.
-      allow read: if request.auth == null;
+      allow read:             if true;
+      allow create, update,
+            delete:           if isAdmin();
     }
 
+    // ── Projects ─────────────────────────────────────────────────────────────
+    // Only admins can manage projects.
+    // (Projects are the certificate workspaces linked to org classes.)
     match /projects/{projectId} {
-      // Admins have full access to manage projects
-      allow read, write, delete: if request.auth != null;
+      allow read, write, delete: if isAdmin();
+    }
+
+    // ── Organisations ─────────────────────────────────────────────────────────
+    // Only admins can create/edit/delete organisations.
+    // Public read is blocked (internal admin data only).
+    match /organisations/{orgId} {
+      allow read, write, delete: if isAdmin();
+
+      // ── Departments (subcollection of Organisation) ─────────────────────────
+      match /departments/{deptId} {
+        allow read, write, delete: if isAdmin();
+
+        // ── Classes (subcollection of Department) ───────────────────────────
+        match /classes/{classId} {
+          allow read, write, delete: if isAdmin();
+        }
+      }
+    }
+
+    // ── Catch-all: deny everything else ──────────────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

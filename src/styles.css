@@ -83,23 +83,39 @@
 }
 
 .dark {
-  --background: oklch(0.16 0.03 260);
-  --foreground: oklch(0.98 0.005 85);
-  --card: oklch(0.2 0.04 260);
-  --card-foreground: oklch(0.98 0.005 85);
-  --popover: oklch(0.2 0.04 260);
-  --popover-foreground: oklch(0.98 0.005 85);
-  --primary: oklch(0.78 0.14 85);
-  --primary-foreground: oklch(0.2 0.04 260);
-  --secondary: oklch(0.26 0.05 260);
-  --secondary-foreground: oklch(0.98 0.005 85);
-  --muted: oklch(0.26 0.05 260);
-  --muted-foreground: oklch(0.72 0.02 260);
-  --accent: oklch(0.3 0.06 260);
-  --accent-foreground: oklch(0.98 0.005 85);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.78 0.14 85);
+  /* ── Pure black / charcoal backgrounds — no blue tint ── */
+  --background:         #0a0a0a;          /* near-black page bg */
+  --foreground:         #f0f0f0;          /* near-white text */
+
+  --card:               #141414;          /* dark card surface */
+  --card-foreground:    #f0f0f0;
+
+  --popover:            #1a1a1a;
+  --popover-foreground: #f0f0f0;
+
+  /* Keep gold as primary accent in dark */
+  --primary:            oklch(0.78 0.14 85);   /* gold */
+  --primary-foreground: #0a0a0a;
+
+  --secondary:          #1f1f1f;
+  --secondary-foreground: #d0d0d0;
+
+  --muted:              #1a1a1a;
+  --muted-foreground:   #888888;          /* mid-grey readable text */
+
+  --accent:             #222222;          /* hover/active highlight */
+  --accent-foreground:  #f0f0f0;
+
+  /* Navy text should become light in dark mode */
+  --navy:               oklch(0.78 0.14 85);   /* gold replaces navy as brand colour */
+  --navy-foreground:    oklch(0.78 0.14 85);   /* gold text on the #111111 background */
+
+  --destructive:        oklch(0.58 0.22 27);
+  --destructive-foreground: #f0f0f0;
+
+  --border:             rgba(255,255,255,0.10);
+  --input:              rgba(255,255,255,0.12);
+  --ring:               oklch(0.78 0.14 85);   /* gold focus ring */
 }
 
 @layer base {
@@ -111,17 +127,43 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
   h1, h2, h3, .font-serif {
     font-family: var(--font-serif);
     letter-spacing: -0.01em;
   }
+
+  /* ── Dark mode — navy-coloured headings/text become gold ── */
+  .dark .text-navy       { color: oklch(0.78 0.14 85) !important; }
+  .dark .navy-text       { color: oklch(0.78 0.14 85) !important; }
+  .dark .bg-navy         { background-color: #111111 !important; }
+  .dark .gold-text       { color: oklch(0.82 0.14 85); }
+
+  /* Input & form fields */
+  .dark input,
+  .dark textarea,
+  .dark select {
+    background-color: #1a1a1a;
+    color: #f0f0f0;
+    border-color: rgba(255,255,255,0.15);
+  }
+  .dark input::placeholder,
+  .dark textarea::placeholder {
+    color: #555555;
+  }
+
+  /* Scrollbar in dark mode */
+  .dark ::-webkit-scrollbar { width: 6px; height: 6px; }
+  .dark ::-webkit-scrollbar-track { background: #111111; }
+  .dark ::-webkit-scrollbar-thumb { background: #333333; border-radius: 3px; }
+  .dark ::-webkit-scrollbar-thumb:hover { background: #444444; }
 }
 
 /* Certificate print-ready A4 landscape */
 .certificate-sheet {
-  width: 297mm;
-  height: 210mm;
+  width: var(--cert-width, 297mm);
+  height: var(--cert-height, 210mm);
   background: #ffffff;
   color: #0b1a3a;
   position: relative;
@@ -147,7 +189,8 @@
 
 @media print {
   @page {
-    size: A4 landscape;
+    /* If a dynamic size is provided, it's best to leave size out or rely on the user's print settings. 
+       We leave it as default or unset to prevent clipping for custom sizes. */
     margin: 0;
   }
 
@@ -155,8 +198,8 @@
     margin: 0 !important;
     padding: 0 !important;
     background-color: #ffffff !important;
-    width: 297mm !important;
-    height: 210mm !important;
+    width: var(--cert-width, 297mm) !important;
+    height: var(--cert-height, 210mm) !important;
     overflow: hidden !important;
   }
 
@@ -175,8 +218,8 @@
     position: absolute !important;
     top: 0 !important;
     left: 0 !important;
-    width: 297mm !important;
-    height: 210mm !important;
+    width: var(--cert-width, 297mm) !important;
+    height: var(--cert-height, 210mm) !important;
     margin: 0 !important;
     padding: 0 !important;
     box-shadow: none !important;

@@ -33,19 +33,19 @@ import {
   Trash2,
   Type,
   X,
-  Globe,
 } from "lucide-react";
 import { DEFAULT_QR_CONFIG, styledQrDataUrl, verifyUrl } from "@/lib/certificate-utils";
 import { QRStylePicker, FONT_OPTIONS } from "@/components/qr-style-picker";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
-export const Route = createFileRoute("/_authenticated/project/$projectId/templates")({
+export const Route = createFileRoute("/_authenticated/org/$orgId/templates")({
   head: () => ({
     meta: [
       { title: "Template Builder — PEC Hacks 4.0" },
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: TemplatesPage,
+  component: OrgTemplatesPage,
 });
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -142,9 +142,10 @@ function emptyTemplate(): CertificateTemplate {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
-function TemplatesPage() {
-  const { projectId } = Route.useParams();
-  const [orgId, setOrgId] = useState<string | null>(null);
+function OrgTemplatesPage() {
+  const { orgId } = Route.useParams();
+  const navigate = useNavigate();
+  const [orgName, setOrgName] = useState("Organisation");
   const [templates, setTemplates] = useState<CertificateTemplate[]>([]);
   const [active, setActive] = useState<CertificateTemplate | null>(null);
   const [loading, setLoading] = useState(true);
@@ -154,53 +155,30 @@ function TemplatesPage() {
 
   useEffect(() => {
     loadTemplates();
-  }, [projectId]);
+  }, [orgId]);
 
   async function loadTemplates() {
     setLoading(true);
     try {
-      // 1. Resolve orgId for this project
-      let resolvedOrgId: string | null = null;
-      if (projectId !== "default") {
-        try {
-          const projSnap = await getDoc(doc(db, "projects", projectId));
-          resolvedOrgId = projSnap.data()?.orgId ?? null;
-          setOrgId(resolvedOrgId);
-        } catch (_) {}
-      }
+      // 1. Fetch org name for UI
+      try {
+        const orgDoc = await getDoc(doc(db, "organisations", orgId));
+        if (orgDoc.exists()) setOrgName(orgDoc.data().name);
+      } catch (_) {}
 
-      // 2. Class-specific templates
-      const classQ = query(
+      const orgQ = query(
         collection(db, "certificate_templates"),
-        where("projectId", "==", projectId === "default" ? null : projectId),
-        orderBy("updatedAt", "desc")
+        where("orgId", "==", orgId),
+        where("projectId", "==", null)
       );
-      const classSnap = await getDocs(classQ);
-      const classTemplates = classSnap.docs.map(
+      const orgSnap = await getDocs(orgQ);
+      const list = orgSnap.docs.map(
         (d) => ({ id: d.id, ...d.data() } as CertificateTemplate)
-      );
+      ).sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime());
 
-      // 3. Org-level shared templates
-      let orgTemplates: CertificateTemplate[] = [];
-      if (resolvedOrgId) {
-        const orgQ = query(
-          collection(db, "certificate_templates"),
-          where("orgId", "==", resolvedOrgId),
-          where("projectId", "==", null)
-        );
-        const orgSnap = await getDocs(orgQ);
-        orgTemplates = orgSnap.docs.map(
-          (d) => ({ id: d.id, isShared: true, ...d.data() } as CertificateTemplate & { isShared?: boolean })
-        ).sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime());
-      }
-
-      const list = [
-        ...classTemplates,
-        ...orgTemplates.filter((o) => !classTemplates.some((c) => c.id === o.id)),
-      ];
       setTemplates(list);
       if (list.length > 0 && !active) setActive(list[0]);
-      else if (list.length === 0) setActive({ ...emptyTemplate(), projectId: projectId === "default" ? "" : projectId });
+      else if (list.length === 0) setActive({ ...emptyTemplate(), orgId, projectId: null });
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -223,10 +201,8 @@ function TemplatesPage() {
         canvasHeight: active.canvasHeight || 794,
         updatedAt: new Date().toISOString(),
         createdAt: active.createdAt || new Date().toISOString(),
-        projectId: projectId === "default" ? "" : projectId,
-        // Attach orgId so this template is discoverable as a class-level template
-        // (org-level shared templates have projectId=null set via the org template page)
-        ...(orgId ? { orgId } : {}),
+        projectId: null, // explicitly null so it's org-wide
+        orgId: orgId,
       };
       await setDoc(doc(db, "certificate_templates", active.id), payload);
       toast.success("Template saved!");
@@ -244,35 +220,6 @@ function TemplatesPage() {
       await deleteDoc(doc(db, "certificate_templates", tpl.id));
       toast.success("Template deleted");
       setActive(emptyTemplate());
-      await loadTemplates();
-    } catch (e) {
-      toast.error((e as Error).message);
-    }
-  }
-
-  async function makeOrgWide(tpl: CertificateTemplate) {
-    if (!orgId) {
-      toast.error("Organization not found. Cannot share template.");
-      return;
-    }
-    if (!confirm(`Make template "${tpl.name}" available to the entire organization? It will be moved from this class to the organization level.`)) return;
-    try {
-      const payload = {
-        name: tpl.name || "Untitled Template",
-        backgroundUrl: tpl.backgroundUrl || "",
-        fields: tpl.fields || [],
-        qrConfig: tpl.qrConfig || DEFAULT_QR_CONFIG,
-        applyToRoles: tpl.applyToRoles || [],
-        applyToTypes: tpl.applyToTypes || [],
-        canvasWidth: tpl.canvasWidth || 1122,
-        canvasHeight: tpl.canvasHeight || 794,
-        updatedAt: new Date().toISOString(),
-        createdAt: tpl.createdAt || new Date().toISOString(),
-        projectId: null,
-        orgId: orgId,
-      };
-      await setDoc(doc(db, "certificate_templates", tpl.id), payload);
-      toast.success("Template is now organization-wide!");
       await loadTemplates();
     } catch (e) {
       toast.error((e as Error).message);
@@ -369,31 +316,53 @@ function TemplatesPage() {
   }
 
   return (
-    <div className="flex flex-col flex-1 h-[calc(100vh-4rem)]">
-      <div className="flex items-center justify-between p-4 sm:p-6 lg:px-8">
-        <div>
-          <h1 className="font-serif text-3xl font-semibold text-navy">Certificate Templates</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Design your certificate layouts.</p>
+    <div className="flex flex-col flex-1 h-screen bg-background">
+      {/* ── Header ── */}
+      <header className="sticky top-0 z-30 border-b border-border bg-card/80 backdrop-blur-sm">
+        <div className="flex h-16 items-center justify-between px-4 sm:px-6">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigate({ to: "/org/$orgId", params: { orgId } })}
+              className="flex h-9 w-9 items-center justify-center rounded-xl hover:bg-accent text-muted-foreground transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+            <div className="h-5 w-px bg-border" />
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/30">
+                <Layers className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div>
+                <h1 className="font-serif text-lg font-semibold text-navy leading-none">
+                  Shared Templates
+                </h1>
+                <p className="text-xs text-muted-foreground">
+                  {orgName} (Applies to all classes)
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <button
+              onClick={() => { setActive({ ...emptyTemplate(), orgId, projectId: null }); setSelectedFieldId(null); }}
+              className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5 text-sm hover:bg-accent"
+            >
+              <Plus className="h-3.5 w-3.5" /> New Template
+            </button>
+            <button
+              onClick={saveTemplate}
+              disabled={saving}
+              className="inline-flex items-center gap-2 rounded-lg bg-navy px-4 py-1.5 text-sm font-medium text-navy-foreground hover:opacity-90 disabled:opacity-50"
+            >
+              {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+              Save
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => { setActive({ ...emptyTemplate(), projectId: projectId === "default" ? "" : projectId }); setSelectedFieldId(null); }}
-            className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5 text-sm hover:bg-accent"
-          >
-            <Plus className="h-3.5 w-3.5" /> New Template
-          </button>
-          <button
-            onClick={saveTemplate}
-            disabled={saving}
-            className="inline-flex items-center gap-2 rounded-lg bg-navy px-4 py-1.5 text-sm font-medium text-navy-foreground hover:opacity-90 disabled:opacity-50"
-          >
-            {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
-            Save
-          </button>
-        </div>
-      </div>
+      </header>
 
-      <div className="flex flex-1 overflow-hidden border-t border-border">
+      <div className="flex flex-1 overflow-hidden">
         {/* ── Left sidebar: template list ── */}
         <aside className="w-56 shrink-0 border-r border-border bg-background overflow-y-auto">
           <div className="p-3">
@@ -411,27 +380,13 @@ function TemplatesPage() {
                   active?.id === t.id ? "bg-accent font-medium" : "hover:bg-muted"
                 }`}
               >
-                <div className="flex items-center gap-2 truncate">
-                  {(t as any).isShared && <Globe className="h-3 w-3 text-muted-foreground shrink-0" title="Organization-wide template" />}
-                  <span className="truncate">{t.name}</span>
-                </div>
-                <div className="ml-1 hidden items-center gap-2 group-hover:flex">
-                  {!(t as any).isShared && orgId && (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); makeOrgWide(t); }}
-                      className="text-muted-foreground hover:text-navy"
-                      title="Make Organization Wide"
-                    >
-                      <Globe className="h-3.5 w-3.5" />
-                    </button>
-                  )}
-                  <button
-                    onClick={(e) => { e.stopPropagation(); deleteTemplate(t); }}
-                    className="text-muted-foreground hover:text-destructive"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
+                <span className="truncate">{t.name}</span>
+                <button
+                  onClick={(e) => { e.stopPropagation(); deleteTemplate(t); }}
+                  className="ml-1 hidden text-muted-foreground hover:text-destructive group-hover:block"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
               </div>
             ))}
           </div>
@@ -882,15 +837,11 @@ function SizeSelector({
   height: number;
   onChange: (w: number, h: number) => void;
 }) {
-  // Detect whether current w/h matches a preset
-  const matchedPreset = SIZE_PRESETS.find(
-    (p) => p.w === width && p.h === height
-  );
+  const matchedPreset = SIZE_PRESETS.find((p) => p.w === width && p.h === height);
   const isCustom = !matchedPreset || matchedPreset.label === "Custom";
   const [customW, setCustomW] = useState(String(width));
   const [customH, setCustomH] = useState(String(height));
 
-  // Keep local custom inputs in sync when preset is chosen externally
   useEffect(() => {
     setCustomW(String(width));
     setCustomH(String(height));
@@ -909,7 +860,7 @@ function SizeSelector({
         value={isCustom ? "Custom" : (matchedPreset?.label ?? "A4 Landscape")}
         onChange={(e) => {
           const preset = SIZE_PRESETS.find((p) => p.label === e.target.value);
-          if (!preset || preset.label === "Custom") return; // user picks Custom → keep current size, show inputs
+          if (!preset || preset.label === "Custom") return;
           onChange(preset.w, preset.h);
         }}
         className="rounded-lg border border-input bg-background px-2.5 py-1.5 text-xs outline-none focus:border-ring"
@@ -919,7 +870,6 @@ function SizeSelector({
         ))}
       </select>
 
-      {/* Custom px inputs — shown when "Custom" is selected or no preset matches */}
       {isCustom && (
         <div className="flex items-center gap-1">
           <input

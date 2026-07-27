@@ -15,6 +15,7 @@ import {
 } from "@/lib/certificate-utils";
 import { Award, Download, Printer, Loader2, ArrowLeft } from "lucide-react";
 import { CertificateSheet, DynamicCertificateSheet } from "@/components/CertificateRenderer";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const Route = createFileRoute("/certificate/$id")({
   head: ({ params }) => ({
@@ -123,7 +124,7 @@ function CertificatePage() {
         >
           <ArrowLeft className="h-4 w-4" /> Back
         </button>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
           <button
             onClick={() => window.print()}
             className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 sm:px-4 py-2 text-sm hover:bg-accent"
@@ -151,6 +152,7 @@ function CertificatePage() {
               </>
             )}
           </button>
+          <ThemeToggle />
         </div>
       </div>
 

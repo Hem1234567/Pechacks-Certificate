@@ -14,11 +14,61 @@ export function DynamicCertificateSheet({
   qr: string;
   id?: string;
 }) {
-  function resolveFieldValue(field: FieldConfig): string {
+  function resolveFieldValue(field: FieldConfig): React.ReactNode {
     const key = field.fieldKey as keyof Cert;
     if (key === ("qr" as any)) return "";
-    const raw = cert[key];
-    if (raw === null || raw === undefined) return "";
+
+    if (key === ("custom_text" as any)) {
+      if (!field.textTemplate) return "";
+      
+      const interpolate = (text: string) => {
+        return text.replace(/\{([^}]+)\}/g, (match, varName) => {
+          const v = varName.trim();
+          let val: any = undefined;
+          
+          // Map friendly names
+          if (v === "Name" || v === "Participant" || v === "participant_name") val = cert.participant_name;
+          else if (v === "Team" || v === "team_name") val = cert.team_name;
+          else if (v === "Project" || v === "project_name") val = cert.project_name;
+          else if (v === "Role" || v === "role") val = cert.role;
+          else if (v === "College" || v === "college") val = cert.college;
+          else if (v === "Type" || v === "certificate_type") val = cert.certificate_type;
+          else if (v === "Event" || v === "event_name") val = cert.event_name;
+          else if (v === "Date" || v === "event_date") val = cert.event_date;
+          else if (v === "Issued" || v === "issued_at") val = new Date(cert.issued_at).toLocaleDateString();
+          else if (v === "Certificate ID" || v === "certificate_id") val = cert.certificate_id;
+          else if (cert.customData && cert.customData[v] !== undefined) val = cert.customData[v];
+          // Also try lowercase matching for customData
+          else if (cert.customData) {
+             const keyMatch = Object.keys(cert.customData).find(k => k.toLowerCase() === v.toLowerCase());
+             if (keyMatch) val = cert.customData[keyMatch];
+          }
+
+          return val !== undefined && val !== null ? String(val) : match;
+        });
+      };
+
+      const lines = field.textTemplate.split('\n');
+      return (
+        <>
+          {lines.map((line, i) => (
+            <span key={i}>
+              {interpolate(line)}
+              {i < lines.length - 1 && <br />}
+            </span>
+          ))}
+        </>
+      );
+    }
+
+    let raw = cert[key];
+    if (raw === null || raw === undefined) {
+      if (cert.customData && cert.customData[key as string] !== undefined) {
+        raw = cert.customData[key as string] as any;
+      } else {
+        return "";
+      }
+    }
     if (key === "issued_at") return new Date(raw as string).toLocaleDateString();
     return String(raw);
   }
@@ -27,7 +77,12 @@ export function DynamicCertificateSheet({
     <div
       id={id}
       className="certificate-sheet"
-      style={{ position: "relative", overflow: "hidden" }}
+      style={{
+        position: "relative",
+        overflow: "hidden",
+        "--cert-width": template.canvasWidth ? `${template.canvasWidth}px` : "297mm",
+        "--cert-height": template.canvasHeight ? `${template.canvasHeight}px` : "210mm",
+      } as React.CSSProperties}
     >
       {/* Background */}
       {template.backgroundUrl && (

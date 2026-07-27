@@ -4,6 +4,7 @@ import { db, type Cert } from "@/integrations/firebase/client";
 import { doc, getDoc, updateDoc, increment } from "firebase/firestore";
 import { CheckCircle2, XCircle, AlertTriangle, Loader2, Award, ExternalLink } from "lucide-react";
 import { z } from "zod";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const searchSchema = z.object({ id: z.string().trim().max(64).optional() });
 
@@ -67,7 +68,10 @@ function VerifyPage() {
               className="h-8 w-auto sm:h-10 object-contain"
             />
           </Link>
-          <Link to="/" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors">← Back</Link>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <Link to="/" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors">← Back</Link>
+          </div>
         </div>
       </header>
 

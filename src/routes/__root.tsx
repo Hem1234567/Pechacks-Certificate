@@ -13,6 +13,8 @@ import appCss from "../styles.css?url";
 import { Toaster } from "sonner";
 import { auth } from "@/integrations/firebase/client";
 import { onAuthStateChanged } from "firebase/auth";
+import { useTheme } from "@/hooks/useTheme";
+
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -94,10 +96,26 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
+// Inline script injected before React hydrates — prevents flash of wrong theme
+// Defaults to LIGHT — only goes dark if user explicitly saved "dark"
+const themeScript = `
+(function(){
+  try{
+    if(localStorage.getItem('pec-theme')==='dark'){
+      document.documentElement.classList.add('dark');
+    }
+  }catch(e){}
+})();
+`;
+
 function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <head><HeadContent /></head>
+      <head>
+        <HeadContent />
+        {/* Anti-flicker: apply saved theme before paint */}
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body>
         {children}
         <Scripts />
@@ -109,6 +127,8 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+  // Mount the theme at root level so it always syncs
+  useTheme();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {

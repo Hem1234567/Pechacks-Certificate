@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { db, auth, type Cert, type CertificateTemplate } from "@/integrations/firebase/client";
 import { 
-  collection, doc, getDocs, setDoc, updateDoc, deleteDoc, 
+  collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, 
   query, where, orderBy, writeBatch, getCountFromServer 
 } from "firebase/firestore";
 import { toast } from "sonner";
@@ -57,16 +57,49 @@ function AdminDashboard() {
 
   async function loadTemplates() {
     try {
-      const q = query(
-        collection(db, "certificate_templates"), 
+      // 1. Load class-specific templates
+      const classQ = query(
+        collection(db, "certificate_templates"),
         where("projectId", "==", projectId === "default" ? null : projectId),
         orderBy("updatedAt", "desc")
       );
-      const snap = await getDocs(q);
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() } as CertificateTemplate));
-      setTemplates(list);
-      // Auto-select first template if only one exists
-      if (list.length === 1) setSelectedTemplateId(list[0].id);
+      const classSnap = await getDocs(classQ);
+      const classTemplates = classSnap.docs.map(
+        (d) => ({ id: d.id, ...d.data() } as CertificateTemplate)
+      );
+
+      // 2. Look up the project's orgId to fetch shared org templates
+      let orgTemplates: CertificateTemplate[] = [];
+      if (projectId !== "default") {
+        try {
+          const projSnap = await getDoc(doc(db, "projects", projectId));
+          const orgId = projSnap.data()?.orgId as string | undefined;
+          if (orgId) {
+            const orgQ = query(
+              collection(db, "certificate_templates"),
+              where("orgId", "==", orgId),
+              where("projectId", "==", null),
+              orderBy("updatedAt", "desc")
+            );
+            const orgSnap = await getDocs(orgQ);
+            orgTemplates = orgSnap.docs.map(
+              (d) => ({ id: d.id, isShared: true, ...d.data() } as CertificateTemplate & { isShared?: boolean })
+            );
+          }
+        } catch (_) {
+          // orgId lookup failure is non-fatal
+        }
+      }
+
+      // 3. Merge — class-specific first, then shared org templates
+      const merged = [
+        ...classTemplates,
+        // exclude org templates already present as class copies
+        ...orgTemplates.filter((o) => !classTemplates.some((c) => c.id === o.id)),
+      ];
+      setTemplates(merged);
+      // Auto-select first if only one
+      if (merged.length === 1) setSelectedTemplateId(merged[0].id);
     } catch (e) {
       console.error("Failed to load templates", e);
     }
@@ -281,13 +314,27 @@ function AdminDashboard() {
       const buf = await file.arrayBuffer();
       const wb = XLSX.read(buf);
       const ws = wb.Sheets[wb.SheetNames[0]];
-      const json = XLSX.utils.sheet_to_json<Record<string, string>>(ws);
+      const json = XLSX.utils.sheet_to_json<Record<string, string>>(ws, { raw: false });
       if (!json.length) throw new Error("Empty spreadsheet");
       const rowsIn = json.map((r) => {
         const get = (k: string) =>
           r[k] ?? r[k.toLowerCase()] ?? r[k.replace(/ /g, "_")] ?? r[k.replace(/ /g, "_").toLowerCase()] ?? null;
         const cleanStr = (v: unknown) => (v == null || v === "" ? null : String(v).trim());
         const certId = (cleanStr(get("Certificate ID")) ?? newCertificateId()) as string;
+        
+        const knownKeys = ["Certificate ID", "Participant", "Name", "Team", "Project", "Role", "College", "Email", "Type", "Event", "Date", "Status"];
+        const customData: Record<string, string> = {};
+        for (const k in r) {
+          const lowerK = k.toLowerCase();
+          const isKnown = knownKeys.some(
+            (kn) => lowerK === kn.toLowerCase() || lowerK === kn.replace(/ /g, "_").toLowerCase()
+          );
+          if (!isKnown) {
+            const val = cleanStr(r[k]);
+            if (val !== null) customData[k] = val;
+          }
+        }
+
         return {
           id: certId,
           certificate_id: certId,
@@ -305,6 +352,7 @@ function AdminDashboard() {
           scan_count: 0,
           templateId: selectedTemplateId ?? null,
           projectId: projectId === "default" ? null : projectId,
+          customData,
         } as Cert;
       }).filter((r) => r.participant_name);
       if (!rowsIn.length) throw new Error("No valid rows (need Participant/Name column)");
@@ -354,6 +402,7 @@ function AdminDashboard() {
           Status: r.status,
           Issued: r.issued_at ? new Date(r.issued_at).toISOString() : new Date().toISOString(),
           Scans: r.scan_count || 0,
+          ...r.customData, // Append any custom data columns automatically
         };
       });
       const ws = XLSX.utils.json_to_sheet(rows);
@@ -378,6 +427,11 @@ function AdminDashboard() {
         "Event": "PEC Hacks 4.0",
         "Date": "15 March 2026",
         "Status": "valid",
+        "Registration No": "2026001",
+        "Department": "Computer Science",
+        "Start Date": "01 March 2026",
+        "End Date": "15 March 2026",
+        "Performance Rating": "Excellent",
       },
       {
         "Participant": "Priya Nair",
@@ -390,6 +444,11 @@ function AdminDashboard() {
         "Event": "PEC Hacks 4.0",
         "Date": "15 March 2026",
         "Status": "valid",
+        "Registration No": "2026002",
+        "Department": "Information Technology",
+        "Start Date": "01 March 2026",
+        "End Date": "15 March 2026",
+        "Performance Rating": "Good",
       },
       {
         "Participant": "Rohan Mehta",
@@ -402,6 +461,11 @@ function AdminDashboard() {
         "Event": "PEC Hacks 4.0",
         "Date": "15 March 2026",
         "Status": "valid",
+        "Registration No": "2026003",
+        "Department": "Electronics",
+        "Start Date": "01 March 2026",
+        "End Date": "15 March 2026",
+        "Performance Rating": "Average",
       },
     ];
 
@@ -415,7 +479,8 @@ function AdminDashboard() {
       { "Column": "Type",        "Required?": "No",  "Description": "Certificate type", "Allowed Values": "Participation | Achievement | Appreciation | Excellence" },
       { "Column": "Event",       "Required?": "No",  "Description": "Event name (defaults to PEC Hacks 4.0)", "Allowed Values": "Any text" },
       { "Column": "Date",        "Required?": "No",  "Description": "Event date shown on certificate", "Allowed Values": "e.g. 15 March 2026" },
-      { "Column": "Status",      "Required?": "No",  "Description": "Certificate status (defaults to valid)", "Allowed Values": "valid | revoked" },
+      { "Column": "Status",      "Required?": "No",  "Description": "Is certificate valid or revoked?", "Allowed Values": "valid | revoked" },
+      { "Column": "(Custom)",    "Required?": "No",  "Description": "Any other column you add (e.g. 'Registration No') will be available in custom text fields like {Registration No}", "Allowed Values": "Any text" },
     ];
 
     const wb = XLSX.utils.book_new();

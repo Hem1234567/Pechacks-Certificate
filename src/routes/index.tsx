@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { ShieldCheck, Award, Search, ScanLine } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const LOGO_URL =
   "https://res.cloudinary.com/dzf0ggbrg/image/upload/v1785113095/uploads/media-converter/rpgoiz586azlmezzgfwu.png";
@@ -43,12 +44,15 @@ function Landing() {
               className="h-8 w-auto sm:h-10 object-contain"
             />
           </Link>
-          <Link
-            to="/admindashboard"
-            className="text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Admin
-          </Link>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <Link
+              to="/admindashboard"
+              className="text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Admin
+            </Link>
+          </div>
         </div>
       </header>
 

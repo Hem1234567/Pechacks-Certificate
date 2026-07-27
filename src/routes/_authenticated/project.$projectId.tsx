@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, Link, useNavigate } from "@tanstack/react-router";
-import { LogOut, ArrowLeft, Layout as LayoutIcon, Eye, Menu, X } from "lucide-react";
+import { LogOut, ArrowLeft, Layout as LayoutIcon, Eye, Menu, X, Download } from "lucide-react";
 import { auth, db, type Project } from "@/integrations/firebase/client";
 import { doc, getDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
@@ -15,20 +15,31 @@ function ProjectLayout() {
   const { projectId } = Route.useParams();
   const navigate = useNavigate();
   const [project, setProject] = useState<Project | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     async function loadProject() {
-      if (projectId === "default") {
-        setProject({ id: "default", name: "Default Project (Legacy)", createdAt: "" });
-        return;
-      }
-      const docRef = doc(db, "projects", projectId);
-      const snap = await getDoc(docRef);
-      if (snap.exists()) {
-        setProject({ id: snap.id, ...snap.data() } as Project);
-      } else {
-        navigate({ to: "/admin" });
+      try {
+        setLoading(true);
+        if (projectId === "default") {
+          setProject({ id: "default", name: "Default Project (Legacy)", createdAt: "" });
+          return;
+        }
+        const docRef = doc(db, "projects", projectId);
+        const snap = await getDoc(docRef);
+        if (snap.exists()) {
+          setProject({ id: snap.id, ...snap.data() } as Project);
+        } else {
+          console.warn("Project not found, redirecting to /admin");
+          navigate({ to: "/admin" });
+        }
+      } catch (err: any) {
+        console.error("Error loading project:", err);
+        setError(err.message || "Failed to load project");
+      } finally {
+        setLoading(false);
       }
     }
     loadProject();
@@ -38,6 +49,34 @@ function ProjectLayout() {
     auth.signOut().then(() => navigate({ to: "/" }));
   }
 
+  if (loading) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-muted/20 text-navy">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-navy border-t-transparent"></div>
+          <p className="text-sm font-medium">Loading project workspace...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-muted/20 text-destructive">
+        <div className="flex flex-col items-center gap-4 text-center max-w-md p-6 bg-card rounded-lg shadow-sm border border-border">
+          <p className="font-semibold text-lg">Error loading project</p>
+          <p className="text-sm text-muted-foreground">{error}</p>
+          <button
+            onClick={() => navigate({ to: "/admin" })}
+            className="mt-4 px-4 py-2 bg-navy text-white rounded-md text-sm font-medium hover:bg-navy/90 transition-colors"
+          >
+            Go back to Admin
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (!project) return null;
 
   const navLinks = [
@@ -45,6 +84,22 @@ function ProjectLayout() {
     { to: "/project/$projectId/templates" as const, label: "Templates", icon: LayoutIcon, exact: false },
     { to: "/project/$projectId/bulk-preview" as const, label: "Bulk Preview", icon: Eye, exact: false },
   ];
+
+  function downloadTemplateCSV() {
+    const headers = ["Name", "Role", "Team", "Project", "College", "Event", "Date", "Certificate ID", "Type", "registration_no", "department", "start_date", "end_date"];
+    const row = ["John Doe", "Participant", "Team Alpha", "Project X", "PEC University", "PEC Hacks 4.0", "15 March 2026", "CERT-001", "Participation", "REG-1234", "Computer Science", "13 March 2026", "15 March 2026"];
+    
+    const csvContent = headers.join(",") + "\n" + row.join(",");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "certificate_data_template.csv");
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
 
   return (
     <div className="min-h-screen bg-muted/20">
@@ -90,6 +145,12 @@ function ProjectLayout() {
                 </Link>
               ))}
             </nav>
+            <button
+              onClick={downloadTemplateCSV}
+              className="hidden md:inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-accent transition-colors"
+            >
+              <Download className="h-4 w-4" /> Template CSV
+            </button>
             <div className="h-6 w-px bg-border hidden md:block" />
             <button
               onClick={signOut}
@@ -126,6 +187,15 @@ function ProjectLayout() {
                 <Icon className="h-4 w-4 shrink-0" /> {label}
               </Link>
             ))}
+            <button
+              onClick={() => {
+                downloadTemplateCSV();
+                setMobileMenuOpen(false);
+              }}
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-foreground hover:bg-accent transition-colors"
+            >
+              <Download className="h-4 w-4 shrink-0" /> Template CSV
+            </button>
             <div className="border-t border-border pt-2 mt-2">
               <button
                 onClick={() => { setMobileMenuOpen(false); signOut(); }}

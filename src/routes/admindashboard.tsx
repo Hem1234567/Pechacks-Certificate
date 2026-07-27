@@ -4,6 +4,7 @@ import { auth } from "@/integrations/firebase/client";
 import { signInWithEmailAndPassword, onAuthStateChanged } from "firebase/auth";
 import { toast } from "sonner";
 import { Loader2, Eye, EyeOff, Lock } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const Route = createFileRoute("/admindashboard")({
   head: () => ({
@@ -45,6 +46,10 @@ function AdminLoginPage() {
 
   return (
     <div className="grid min-h-screen place-items-center bg-background px-4 py-8">
+      {/* Theme toggle — top right */}
+      <div className="fixed top-4 right-4 z-50">
+        <ThemeToggle />
+      </div>
       <div className="w-full max-w-md">
         {/* Logo */}
         <Link to="/" className="mb-8 flex flex-col items-center gap-3">

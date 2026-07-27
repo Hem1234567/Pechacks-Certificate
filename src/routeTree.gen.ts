@@ -17,9 +17,12 @@ import { Route as VerifyRouteImport } from './routes/verify'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as CertificateIdRouteImport } from './routes/certificate.$id'
 import { Route as AuthenticatedProjectProjectIdRouteImport } from './routes/_authenticated/project.$projectId'
+import { Route as AuthenticatedOrgOrgIdIndexRouteImport } from './routes/_authenticated/org.$orgId.index'
+import { Route as AuthenticatedOrgOrgIdTemplatesRouteImport } from './routes/_authenticated/org.$orgId.templates'
 import { Route as AuthenticatedProjectProjectIdIndexRouteImport } from './routes/_authenticated/project.$projectId.index'
 import { Route as AuthenticatedProjectProjectIdBulkPreviewRouteImport } from './routes/_authenticated/project.$projectId.bulk-preview'
 import { Route as AuthenticatedProjectProjectIdTemplatesRouteImport } from './routes/_authenticated/project.$projectId.templates'
+import { Route as AuthenticatedOrgOrgIdDeptDeptIdRouteImport } from './routes/_authenticated/org.$orgId.dept.$deptId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -61,6 +64,18 @@ const AuthenticatedProjectProjectIdRoute =
     path: '/project/$projectId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedOrgOrgIdIndexRoute =
+  AuthenticatedOrgOrgIdIndexRouteImport.update({
+    id: '/org/$orgId/',
+    path: '/org/$orgId/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOrgOrgIdTemplatesRoute =
+  AuthenticatedOrgOrgIdTemplatesRouteImport.update({
+    id: '/org/$orgId/templates',
+    path: '/org/$orgId/templates',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedProjectProjectIdIndexRoute =
   AuthenticatedProjectProjectIdIndexRouteImport.update({
     id: '/',
@@ -79,6 +94,12 @@ const AuthenticatedProjectProjectIdTemplatesRoute =
     path: '/templates',
     getParentRoute: () => AuthenticatedProjectProjectIdRoute,
   } as any)
+const AuthenticatedOrgOrgIdDeptDeptIdRoute =
+  AuthenticatedOrgOrgIdDeptDeptIdRouteImport.update({
+    id: '/org/$orgId/dept/$deptId',
+    path: '/org/$orgId/dept/$deptId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -88,9 +109,12 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/certificate/$id': typeof CertificateIdRoute
   '/project/$projectId': typeof AuthenticatedProjectProjectIdRouteWithChildren
+  '/org/$orgId/templates': typeof AuthenticatedOrgOrgIdTemplatesRoute
   '/project/$projectId/bulk-preview': typeof AuthenticatedProjectProjectIdBulkPreviewRoute
   '/project/$projectId/templates': typeof AuthenticatedProjectProjectIdTemplatesRoute
+  '/org/$orgId/': typeof AuthenticatedOrgOrgIdIndexRoute
   '/project/$projectId/': typeof AuthenticatedProjectProjectIdIndexRoute
+  '/org/$orgId/dept/$deptId': typeof AuthenticatedOrgOrgIdDeptDeptIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -99,9 +123,12 @@ export interface FileRoutesByTo {
   '/verify': typeof VerifyRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/certificate/$id': typeof CertificateIdRoute
+  '/org/$orgId/templates': typeof AuthenticatedOrgOrgIdTemplatesRoute
   '/project/$projectId/bulk-preview': typeof AuthenticatedProjectProjectIdBulkPreviewRoute
   '/project/$projectId/templates': typeof AuthenticatedProjectProjectIdTemplatesRoute
+  '/org/$orgId': typeof AuthenticatedOrgOrgIdIndexRoute
   '/project/$projectId': typeof AuthenticatedProjectProjectIdIndexRoute
+  '/org/$orgId/dept/$deptId': typeof AuthenticatedOrgOrgIdDeptDeptIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -113,9 +140,12 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/certificate/$id': typeof CertificateIdRoute
   '/_authenticated/project/$projectId': typeof AuthenticatedProjectProjectIdRouteWithChildren
+  '/_authenticated/org/$orgId/templates': typeof AuthenticatedOrgOrgIdTemplatesRoute
   '/_authenticated/project/$projectId/bulk-preview': typeof AuthenticatedProjectProjectIdBulkPreviewRoute
   '/_authenticated/project/$projectId/templates': typeof AuthenticatedProjectProjectIdTemplatesRoute
+  '/_authenticated/org/$orgId/': typeof AuthenticatedOrgOrgIdIndexRoute
   '/_authenticated/project/$projectId/': typeof AuthenticatedProjectProjectIdIndexRoute
+  '/_authenticated/org/$orgId/dept/$deptId': typeof AuthenticatedOrgOrgIdDeptDeptIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -127,9 +157,12 @@ export interface FileRouteTypes {
     | '/admin'
     | '/certificate/$id'
     | '/project/$projectId'
+    | '/org/$orgId/templates'
     | '/project/$projectId/bulk-preview'
     | '/project/$projectId/templates'
+    | '/org/$orgId/'
     | '/project/$projectId/'
+    | '/org/$orgId/dept/$deptId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -138,9 +171,12 @@ export interface FileRouteTypes {
     | '/verify'
     | '/admin'
     | '/certificate/$id'
+    | '/org/$orgId/templates'
     | '/project/$projectId/bulk-preview'
     | '/project/$projectId/templates'
+    | '/org/$orgId'
     | '/project/$projectId'
+    | '/org/$orgId/dept/$deptId'
   id:
     | '__root__'
     | '/'
@@ -151,9 +187,12 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/certificate/$id'
     | '/_authenticated/project/$projectId'
+    | '/_authenticated/org/$orgId/templates'
     | '/_authenticated/project/$projectId/bulk-preview'
     | '/_authenticated/project/$projectId/templates'
+    | '/_authenticated/org/$orgId/'
     | '/_authenticated/project/$projectId/'
+    | '/_authenticated/org/$orgId/dept/$deptId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -223,6 +262,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectProjectIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/org/$orgId/': {
+      id: '/_authenticated/org/$orgId/'
+      path: '/org/$orgId'
+      fullPath: '/org/$orgId/'
+      preLoaderRoute: typeof AuthenticatedOrgOrgIdIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/org/$orgId/templates': {
+      id: '/_authenticated/org/$orgId/templates'
+      path: '/org/$orgId/templates'
+      fullPath: '/org/$orgId/templates'
+      preLoaderRoute: typeof AuthenticatedOrgOrgIdTemplatesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/project/$projectId/': {
       id: '/_authenticated/project/$projectId/'
       path: '/'
@@ -243,6 +296,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/project/$projectId/templates'
       preLoaderRoute: typeof AuthenticatedProjectProjectIdTemplatesRouteImport
       parentRoute: typeof AuthenticatedProjectProjectIdRoute
+    }
+    '/_authenticated/org/$orgId/dept/$deptId': {
+      id: '/_authenticated/org/$orgId/dept/$deptId'
+      path: '/org/$orgId/dept/$deptId'
+      fullPath: '/org/$orgId/dept/$deptId'
+      preLoaderRoute: typeof AuthenticatedOrgOrgIdDeptDeptIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
   }
 }
@@ -271,12 +331,18 @@ const AuthenticatedProjectProjectIdRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedProjectProjectIdRoute: typeof AuthenticatedProjectProjectIdRouteWithChildren
+  AuthenticatedOrgOrgIdTemplatesRoute: typeof AuthenticatedOrgOrgIdTemplatesRoute
+  AuthenticatedOrgOrgIdIndexRoute: typeof AuthenticatedOrgOrgIdIndexRoute
+  AuthenticatedOrgOrgIdDeptDeptIdRoute: typeof AuthenticatedOrgOrgIdDeptDeptIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedProjectProjectIdRoute:
     AuthenticatedProjectProjectIdRouteWithChildren,
+  AuthenticatedOrgOrgIdTemplatesRoute: AuthenticatedOrgOrgIdTemplatesRoute,
+  AuthenticatedOrgOrgIdIndexRoute: AuthenticatedOrgOrgIdIndexRoute,
+  AuthenticatedOrgOrgIdDeptDeptIdRoute: AuthenticatedOrgOrgIdDeptDeptIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

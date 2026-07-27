@@ -33,6 +33,7 @@ export type Cert = {
   scan_count: number;
   templateId?: string | null;   // explicit template link (overrides role/type auto-match)
   projectId?: string | null;      // explicit project link
+  customData?: Record<string, string>; // dynamic data for custom text fields
 };
 
 // ─── Template Builder Types ───────────────────────────────────────────────────
@@ -41,6 +42,7 @@ export type FieldConfig = {
   id: string;              // e.g. "participant_name" | "role" | "qr" | custom uuid
   label: string;           // display label in editor
   fieldKey: string;        // maps to Cert property key, or "qr" for QR block
+  textTemplate?: string;   // optional raw template string (e.g. "Student of {Department}")
   x: number;               // percent from left (0–100)
   y: number;               // percent from top (0–100)
   width: number;           // percent width (0–100)
@@ -75,17 +77,47 @@ export type Project = {
   id: string;
   name: string;
   createdAt: string;
+  orgId?: string | null;    // scoped to an organisation
+  deptId?: string | null;   // scoped to a department
+};
+
+// ─── Organisation Hierarchy ───────────────────────────────────────────────────
+
+export type Organisation = {
+  id: string;
+  name: string;
+  createdAt: string;
+};
+
+export type Department = {
+  id: string;
+  orgId: string;
+  name: string;
+  createdAt: string;
+};
+
+export type OrgClass = {
+  id: string;
+  orgId: string;
+  deptId: string;
+  name: string;
+  createdAt: string;
+  projectId: string; // links to /projects/{projectId}
 };
 
 export type CertificateTemplate = {
   id: string;
-  projectId?: string;      // scopes template to a project
+  projectId?: string | null;  // scopes template to a project/class (null = org-level)
+  orgId?: string | null;   // if set + projectId null/absent = shared org-level template
   name: string;
   backgroundUrl: string;   // base64 data URL or Cloudinary URL
   fields: FieldConfig[];
   qrConfig: QRStyleConfig;
   applyToRoles: string[];  // empty = applies to all roles
   applyToTypes: string[];  // empty = applies to all types
+  canvasWidth?: number;    // px — default 1122 (A4 landscape)
+  canvasHeight?: number;   // px — default 794 (A4 landscape)
   createdAt: string;
   updatedAt: string;
 };
+
