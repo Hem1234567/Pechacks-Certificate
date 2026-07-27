@@ -160,7 +160,7 @@ function OrgDetailPage() {
         </div>
 
         {/* Stats row */}
-        <div className="grid gap-4 sm:grid-cols-3 mb-8">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mb-8">
           {[
             {
               label: "Departments",
@@ -202,7 +202,7 @@ function OrgDetailPage() {
         </div>
 
         {/* Section title */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-4">
           <div>
             <h2 className="font-serif text-2xl text-navy">Departments</h2>
             <p className="text-sm text-muted-foreground mt-0.5">
@@ -246,7 +246,7 @@ function OrgDetailPage() {
             </button>
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {departments.map((dept) => (
               <button
                 key={dept.id}

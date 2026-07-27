@@ -36,7 +36,7 @@ type Section = "home" | "organisation" | "projects";
 function AdminDashboard() {
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState<Section>("home");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(typeof window !== "undefined" ? window.innerWidth >= 768 : true);
 
   // Projects state
   const [projects, setProjects] = useState<Project[]>([]);
@@ -118,12 +118,20 @@ function AdminDashboard() {
 
   return (
     <div className="flex min-h-screen bg-background">
+      {/* ── Mobile Overlay ─────────────────────────────────────────────────── */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 z-30 bg-black/50 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* ── Sidebar ────────────────────────────────────────────────────────── */}
       <aside
         className={`
           fixed inset-y-0 left-0 z-40 flex flex-col
           transition-all duration-300 ease-in-out shadow-2xl
-          ${sidebarOpen ? "w-64" : "w-16"}
+          ${sidebarOpen ? "translate-x-0 w-64" : "-translate-x-full md:translate-x-0 w-64 md:w-16"}
         `}
         style={{ backgroundColor: "#111111", borderRight: "1px solid rgba(255,255,255,0.07)" }}
       >
@@ -171,7 +179,7 @@ function AdminDashboard() {
                     <span style={{ color: active ? "oklch(0.78 0.14 85)" : "rgba(255,255,255,0.65)" }} className="shrink-0">
                       {icon}
                     </span>
-                    {sidebarOpen && (
+                    {(!sidebarOpen ? false : true) && ( // On mobile it's always w-64 when open, so always show label
                       <>
                         <span className="flex-1 truncate">{label}</span>
                         {active && <ChevronRight className="h-3.5 w-3.5" style={{ color: "oklch(0.78 0.14 85)" }} />}
@@ -187,10 +195,10 @@ function AdminDashboard() {
         {/* Sidebar Footer */}
         <div className="p-4 space-y-1" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
           {/* Theme toggle */}
-          <div className={`flex items-center ${sidebarOpen ? "gap-3 px-3 py-2" : "justify-center py-2"}`}>
-            {sidebarOpen && <span className="text-xs font-medium uppercase tracking-wide" style={{ color: "rgba(255,255,255,0.4)" }}>Theme</span>}
+          <div className={`flex items-center gap-3 px-3 py-2 ${!sidebarOpen ? "md:justify-center md:px-0" : ""}`}>
+            {(!sidebarOpen ? false : true) && <span className="text-xs font-medium uppercase tracking-wide" style={{ color: "rgba(255,255,255,0.4)" }}>Theme</span>}
             <ThemeToggle
-              className={`border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 ${sidebarOpen ? "" : "w-full justify-center"}`}
+              className={`border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 ${!sidebarOpen ? "md:w-full md:justify-center" : ""}`}
               style={{ color: "#ffffff" }}
             />
           </div>
@@ -203,7 +211,7 @@ function AdminDashboard() {
             title={!sidebarOpen ? "Sign out" : undefined}
           >
             <LogOut className="h-4 w-4 shrink-0" />
-            {sidebarOpen && <span>Sign out</span>}
+            {(!sidebarOpen ? false : true) && <span>Sign out</span>}
           </button>
         </div>
       </aside>
@@ -211,16 +219,22 @@ function AdminDashboard() {
       {/* ── Main Content ───────────────────────────────────────────────────── */}
       <div
         className={`flex flex-col flex-1 min-w-0 transition-all duration-300 ${
-          sidebarOpen ? "ml-64" : "ml-16"
+          sidebarOpen ? "md:ml-64" : "md:ml-16"
         }`}
       >
         {/* Top Header */}
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border bg-card/80 backdrop-blur-sm px-6 shadow-sm">
-          <div className="flex items-center gap-3">
+        <header className="sticky top-0 z-20 flex h-16 items-center gap-4 border-b border-border bg-card/80 backdrop-blur-sm px-4 md:px-6 shadow-sm">
+          <button 
+            className="md:hidden p-2 -ml-2 text-muted-foreground hover:text-foreground"
+            onClick={() => setSidebarOpen(true)}
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+          <div className="flex items-center gap-2 md:gap-3">
             <img
               src="https://res.cloudinary.com/dzf0ggbrg/image/upload/v1785113095/uploads/media-converter/rpgoiz586azlmezzgfwu.png"
               alt="PEC"
-              className="h-8 w-auto object-contain"
+              className="hidden sm:block h-8 w-auto object-contain"
             />
             <div>
               <h1 className="font-serif text-lg font-semibold text-navy leading-none">
@@ -234,7 +248,7 @@ function AdminDashboard() {
             </div>
           </div>
           {/* Breadcrumb */}
-          <div className="ml-auto flex items-center gap-1.5 text-xs text-muted-foreground">
+          <div className="hidden md:flex ml-auto items-center gap-1.5 text-xs text-muted-foreground">
             <span>Dashboard</span>
             <ChevronRight className="h-3 w-3" />
             <span className="capitalize text-foreground font-medium">{activeSection}</span>

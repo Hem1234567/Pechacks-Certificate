@@ -362,9 +362,9 @@ function OrgTemplatesPage() {
         </div>
       </header>
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-col md:flex-row flex-1 overflow-hidden border-t border-border">
         {/* ── Left sidebar: template list ── */}
-        <aside className="w-56 shrink-0 border-r border-border bg-background overflow-y-auto">
+        <aside className="w-full md:w-56 shrink-0 border-b md:border-b-0 md:border-r border-border bg-background overflow-y-auto max-h-48 md:max-h-none">
           <div className="p-3">
             <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground px-1">
               Saved Templates
@@ -394,7 +394,7 @@ function OrgTemplatesPage() {
 
         {/* ── Main editor area ── */}
         {active ? (
-          <div className="flex flex-1 overflow-hidden">
+          <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
             {/* Canvas + tab bar */}
             <div className="flex flex-1 flex-col overflow-hidden">
               {/* Template meta bar */}
@@ -505,9 +505,9 @@ function OrgTemplatesPage() {
 
               {/* Fields style tab */}
               {tab === "fields" && (
-                <div className="flex flex-1 overflow-hidden">
+                <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
                   {/* Field list */}
-                  <div className="w-52 shrink-0 overflow-y-auto border-r border-border p-3">
+                  <div className="w-full md:w-52 shrink-0 overflow-y-auto border-b md:border-b-0 md:border-r border-border p-3 max-h-48 md:max-h-none">
                     <div className="mb-3 flex items-center justify-between">
                       <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
                         Fields
