@@ -131,9 +131,13 @@ export async function downloadCertificatePdf(
     onProgress?.("Saving PDF…");
     const imgData = canvas.toDataURL("image/png");
 
-    // A4 landscape: 297mm x 210mm
-    const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-    pdf.addImage(imgData, "PNG", 0, 0, 297, 210, undefined, "FAST");
+    // Calculate physical dimensions in mm (assuming 96 DPI for the DOM element)
+    const pdfWidth = (el.offsetWidth / 96) * 25.4;
+    const pdfHeight = (el.offsetHeight / 96) * 25.4;
+    const orientation = pdfWidth > pdfHeight ? "landscape" : "portrait";
+
+    const pdf = new jsPDF({ orientation, unit: "mm", format: [pdfWidth, pdfHeight] });
+    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight, undefined, "FAST");
     pdf.save(filename);
     onProgress?.("");
   } catch (e: any) {

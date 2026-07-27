@@ -275,8 +275,11 @@ function AdminDashboard() {
         if (el) {
           const canvas = await html2canvas(el, { scale: 3, backgroundColor: "#ffffff", useCORS: true, logging: false });
           const imgData = canvas.toDataURL("image/png");
-          const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-          pdf.addImage(imgData, "PNG", 0, 0, 297, 210, undefined, "FAST");
+          const pdfWidth = (el.offsetWidth / 96) * 25.4;
+          const pdfHeight = (el.offsetHeight / 96) * 25.4;
+          const orientation = pdfWidth > pdfHeight ? "landscape" : "portrait";
+          const pdf = new jsPDF({ orientation, unit: "mm", format: [pdfWidth, pdfHeight] });
+          pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight, undefined, "FAST");
           
           const safeName = `${cert.participant_name.replace(/[^a-z0-9]/gi, '_')}_${cert.certificate_id}.pdf`;
           zip.file(safeName, pdf.output("blob"));

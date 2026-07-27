@@ -159,10 +159,10 @@ function CertificatePage() {
       <div className="mx-auto grid place-items-center">
         {template && template.fields.length > 0 ? (
           // ── Custom template rendering ──
-          <DynamicCertificateSheet cert={cert} template={template} qr={qr} />
+          <DynamicCertificateSheet cert={cert} template={template} qr={qr} id="certificate-print" />
         ) : (
           // ── Fallback: original hardcoded design ──
-          <CertificateSheet cert={cert} qr={qr} />
+          <CertificateSheet cert={cert} qr={qr} id="certificate-print" />
         )}
       </div>
     </div>
